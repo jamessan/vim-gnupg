@@ -1,5 +1,5 @@
 " Name: gnupg.vim
-" Version: $Id: gnupg.vim,v 1.26 2003/05/30 09:29:16 mb Exp $
+" Version: $Id: gnupg.vim,v 1.27 2003/06/24 07:57:16 mb Exp $
 " Author: Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
 " TODO enable signing
@@ -7,12 +7,12 @@
 " Section: Documentation {{{1
 " Description:
 "   
-"   This script implements transparent editing of gpg encrypted files. The
-"   filename must have a ".gpg" suffix. When opening such a file the content is
-"   decrypted, when opening a new file the script will ask for the recipients of
-"   the encrypted file. The file content will be encrypted to all recipients
-"   before it is written. The script turns off viminfo and swapfile to increase
-"   security.
+"   This script implements transparent editing of gpg public/private-key
+"   encrypted files. The filename must have a ".gpg" suffix. When opening such
+"   a file the content is decrypted, when opening a new file the script will
+"   ask for the recipients of the encrypted file. The file content will be
+"   encrypted to all recipients before it is written. The script turns off
+"   viminfo and swapfile to increase security.
 "
 " Installation: 
 "
