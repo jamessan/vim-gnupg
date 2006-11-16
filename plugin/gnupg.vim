@@ -43,7 +43,7 @@
 "     Prints the list of options.
 "
 " Variables:
-"   GPGUseAgent
+"   g:GPGUseAgent
 "     If set to 1 a possible available gpg-agent is used. Defaults to 0.
 "
 " Credits:
@@ -97,12 +97,18 @@ highlight default GPGHighlightUnknownRecipient term=reverse ctermfg=Red cterm=un
 "
 fun s:GPGInit()
   " check if gpg-agent is allowed
-  if (!exists("GPGUseAgent"))
-    let GPGUseAgent = 0
+  if (!exists("g:GPGUseAgent"))
+    let g:GPGUseAgent = 0
   endif
 
   " determine if gnupg can use the gpg-agent
-  if (exists("$GPG_AGENT_INFO") && GPGUseAgent == 1)
+  if (exists("$GPG_AGENT_INFO") && g:GPGUseAgent == 1)
+    if (!exists("$GPG_TTY"))
+      echohl GPGError
+      echo "The GPG_TTY is not set!"
+      echo "gpg-agent might not work."
+      echohl None
+    endif
     let s:GPGCommand="LANG=C gpg --use-agent"
   else
     let s:GPGCommand="LANG=C gpg --no-use-agent"
