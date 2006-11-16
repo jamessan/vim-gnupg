@@ -42,6 +42,10 @@
 "   :GPGViewRecipients
 "     Prints the list of options.
 "
+" Variables:
+"   GPGUseAgent
+"     If set to 1 a possible available gpg-agent is used. Defaults to 0.
+"
 " Credits:
 "   Mathieu Clabaut for inspirations through his vimspell.vim script.
 " Section: Plugin header {{{1
@@ -92,17 +96,22 @@ highlight default GPGHighlightUnknownRecipient term=reverse ctermfg=Red cterm=un
 " initialize the plugin
 "
 fun s:GPGInit()
+  " check if gpg-agent is allowed
+  if (!exists("GPGUseAgent"))
+    let GPGUseAgent = 0
+  endif
+
   " determine if gnupg can use the gpg-agent
-  if (exists("$GPG_AGENT_INFO"))
-    let s:gpgcommand="LANG=C gpg --use-agent"
+  if (exists("$GPG_AGENT_INFO") && GPGUseAgent == 1)
+    let s:GPGCommand="LANG=C gpg --use-agent"
   else
-    let s:gpgcommand="LANG=C gpg --no-use-agent"
+    let s:GPGCommand="LANG=C gpg --no-use-agent"
   endif
 
   " find the supported algorithms
   let shsave=&sh
   let &sh='sh'
-  let output=system(s:gpgcommand . " --version")
+  let output=system(s:GPGCommand . " --version")
   let &sh=shsave
 
   let s:GPGPubkey=substitute(output, ".*Pubkey: \\(.\\{-}\\)\n.*", "\\1", "")
@@ -127,7 +136,7 @@ fun s:GPGDecrypt()
   " find the recipients of the file
   let shsave=&sh
   let &sh='sh'
-  let output=system(s:gpgcommand . " --decrypt --dry-run --batch " . filename)
+  let output=system(s:GPGCommand . " --decrypt --dry-run --batch " . filename)
   let &sh=shsave
 
   " check if the file is symmetric/asymmetric encrypted
@@ -177,7 +186,7 @@ fun s:GPGDecrypt()
   " we must redirect stderr (using sh temporarily)
   let shsave=&sh
   let &sh='sh'
-  exec "'[,']!" . s:gpgcommand . " --quiet --decrypt 2>/dev/null"
+  exec "'[,']!" . s:GPGCommand . " --quiet --decrypt 2>/dev/null"
   let &sh=shsave
   if (v:shell_error) " message could not be decrypted
     silent u
@@ -241,7 +250,7 @@ fun s:GPGEncrypt()
   " encrypt the buffer
   let shsave=&sh
   let &sh='sh'
-  silent exec "'[,']!" . s:gpgcommand . " --quiet --no-encrypt-to " . options . recipients . " 2>/dev/null"
+  silent exec "'[,']!" . s:GPGCommand . " --quiet --no-encrypt-to " . options . recipients . " 2>/dev/null"
   let &sh=shsave
   if (v:shell_error) " message could not be encrypted
     silent u
@@ -583,7 +592,7 @@ fun s:GPGNameToID(name)
   " ask gpg for the id for a name
   let shsave=&sh
   let &sh='sh'
-  let output=system(s:gpgcommand . " --quiet --with-colons --fixed-list-mode --list-keys \"" . a:name . "\"")
+  let output=system(s:GPGCommand . " --quiet --with-colons --fixed-list-mode --list-keys \"" . a:name . "\"")
   let &sh=shsave
 
   " parse the output of gpg
@@ -646,7 +655,7 @@ fun s:GPGIDToName(identity)
   " ask gpg for the id for a name
   let shsave=&sh
   let &sh='sh'
-  let output=system(s:gpgcommand . " --quiet --with-colons --fixed-list-mode --list-keys " . a:identity )
+  let output=system(s:GPGCommand . " --quiet --with-colons --fixed-list-mode --list-keys " . a:identity )
   let &sh=shsave
 
   " parse the output of gpg
