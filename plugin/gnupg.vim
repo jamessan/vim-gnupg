@@ -44,7 +44,7 @@
 "
 " Variables:
 "   g:GPGUseAgent
-"     If set to 1 a possible available gpg-agent is used. Defaults to 0.
+"     If set to 0 a possible available gpg-agent won't be used. Defaults to 1.
 "
 " Credits:
 "   Mathieu Clabaut for inspirations through his vimspell.vim script.
@@ -98,7 +98,7 @@ highlight default GPGHighlightUnknownRecipient term=reverse ctermfg=Red cterm=un
 fun s:GPGInit()
   " check if gpg-agent is allowed
   if (!exists("g:GPGUseAgent"))
-    let g:GPGUseAgent = 0
+    let g:GPGUseAgent = 1
   endif
 
   " determine if gnupg can use the gpg-agent
