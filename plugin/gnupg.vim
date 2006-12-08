@@ -114,11 +114,27 @@ fun s:GPGInit()
     let s:GPGCommand="LANG=C gpg --no-use-agent"
   endif
 
+  " setup shell environment for unix and windows
+  let s:shellredirsave=&shellredir
+  let s:shellsave=&shell
+  if (match(&shell,"cmd.exe"))
+    " windows specific settings
+    let s:shellredir = '>%s'
+    let s:shell = &shell
+    let s:redirnull = '2>nul'
+  else
+    " unix specific settings
+    let s:shellredir = &shellredir
+    let s:shell = 'sh'
+    let s:redirnull ='2>/dev/null'
+  endi
+
   " find the supported algorithms
-  let shsave=&sh
-  let &sh='sh'
+  let &shellredir=s:shellredir
+  let &shell=s:shell
   let output=system(s:GPGCommand . " --version")
-  let &sh=shsave
+  let &shellredir=s:shellredir
+  let &shell=s:shellsave
 
   let s:GPGPubkey=substitute(output, ".*Pubkey: \\(.\\{-}\\)\n.*", "\\1", "")
   let s:GPGCipher=substitute(output, ".*Cipher: \\(.\\{-}\\)\n.*", "\\1", "")
@@ -140,10 +156,11 @@ fun s:GPGDecrypt()
   let b:GPGOptions=""
 
   " find the recipients of the file
-  let shsave=&sh
-  let &sh='sh'
+  let &shellredir=s:shellredir
+  let &shell=s:shell
   let output=system(s:GPGCommand . " --decrypt --dry-run --batch " . filename)
-  let &sh=shsave
+  let &shellredir=s:shellredir
+  let &shell=s:shellsave
 
   " check if the file is symmetric/asymmetric encrypted
   if (match(output, "gpg: [^ ]\\+ encrypted data") >= 0)
@@ -189,11 +206,12 @@ fun s:GPGDecrypt()
 
   " finally decrypt the buffer content
   " since even with the --quiet option passphrase typos will be reported,
-  " we must redirect stderr (using sh temporarily)
-  let shsave=&sh
-  let &sh='sh'
-  exec "'[,']!" . s:GPGCommand . " --quiet --decrypt 2>/dev/null"
-  let &sh=shsave
+  " we must redirect stderr (using shell temporarily)
+  let &shellredir=s:shellredir
+  let &shell=s:shell
+  exec "'[,']!" . s:GPGCommand . " --quiet --decrypt " . s:redirnull
+  let &shellredir=s:shellredir
+  let &shell=s:shellsave
   if (v:shell_error) " message could not be decrypted
     silent u
     echohl GPGError
@@ -254,10 +272,11 @@ fun s:GPGEncrypt()
   endi
 
   " encrypt the buffer
-  let shsave=&sh
-  let &sh='sh'
-  silent exec "'[,']!" . s:GPGCommand . " --quiet --no-encrypt-to " . options . recipients . " 2>/dev/null"
-  let &sh=shsave
+  let &shellredir=s:shellredir
+  let &shell=s:shell
+  silent exec "'[,']!" . s:GPGCommand . " --quiet --no-encrypt-to " . options . recipients . " " . s:redirnull
+  let &shellredir=s:shellredir
+  let &shell=s:shellsave
   if (v:shell_error) " message could not be encrypted
     silent u
     echohl GPGError
@@ -596,10 +615,11 @@ endf
 " Returns: ID for the given name
 fun s:GPGNameToID(name)
   " ask gpg for the id for a name
-  let shsave=&sh
-  let &sh='sh'
+  let &shellredir=s:shellredir
+  let &shell=s:shell
   let output=system(s:GPGCommand . " --quiet --with-colons --fixed-list-mode --list-keys \"" . a:name . "\"")
-  let &sh=shsave
+  let &shellredir=s:shellredir
+  let &shell=s:shellsave
 
   " parse the output of gpg
   let pub_seen=0
@@ -659,10 +679,11 @@ fun s:GPGIDToName(identity)
   " TODO is the encryption subkey really unique?
 
   " ask gpg for the id for a name
-  let shsave=&sh
-  let &sh='sh'
+  let &shellredir=s:shellredir
+  let &shell=s:shell
   let output=system(s:GPGCommand . " --quiet --with-colons --fixed-list-mode --list-keys " . a:identity )
-  let &sh=shsave
+  let &shellredir=s:shellredir
+  let &shell=s:shellsave
 
   " parse the output of gpg
   let pub_seen=0
