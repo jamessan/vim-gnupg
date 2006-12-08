@@ -43,13 +43,15 @@
 "     Prints the list of options.
 "
 " Variables:
+"
 "   g:GPGUseAgent
 "     If set to 0 a possible available gpg-agent won't be used. Defaults to 1.
 "
 " Credits:
 "   Mathieu Clabaut for inspirations through his vimspell.vim script.
+"   Richard Bronosky for patch to enable native windows support
 " Section: Plugin header {{{1
-if (exists("loaded_gnupg") || &cp || exists("#BufReadPre#*.\(gpg\|pgp\)"))
+if (exists("loaded_gnupg") || &cp || exists("#BufReadPre#*.\(gpg\|asc\|pgp\)"))
   finish
 endi
 let loaded_gnupg = 1
@@ -60,31 +62,31 @@ au!
 
 " First make sure nothing is written to ~/.viminfo while editing
 " an encrypted file.
-autocmd BufNewFile,BufReadPre,FileReadPre      *.\(gpg\|pgp\) set viminfo=
+autocmd BufNewFile,BufReadPre,FileReadPre      *.\(gpg\|asc\|pgp\) set viminfo=
 " We don't want a swap file, as it writes unencrypted data to disk
-autocmd BufNewFile,BufReadPre,FileReadPre      *.\(gpg\|pgp\) set noswapfile
+autocmd BufNewFile,BufReadPre,FileReadPre      *.\(gpg\|asc\|pgp\) set noswapfile
 " Initialize the internal variables
-autocmd BufNewFile,BufReadPre,FileReadPre      *.\(gpg\|pgp\) call s:GPGInit()
+autocmd BufNewFile,BufReadPre,FileReadPre      *.\(gpg\|asc\|pgp\) call s:GPGInit()
 " Force the user to edit the recipient list if he opens a new file
-autocmd BufNewFile                             *.\(gpg\|pgp\) call s:GPGEditRecipients()
+autocmd BufNewFile                             *.\(gpg\|asc\|pgp\) call s:GPGEditRecipients()
 " Switch to binary mode to read the encrypted file
-autocmd BufReadPre,FileReadPre                 *.\(gpg\|pgp\) set bin
-autocmd BufReadPost,FileReadPost               *.\(gpg\|pgp\) call s:GPGDecrypt()
+autocmd BufReadPre,FileReadPre                 *.\(gpg\|asc\|pgp\) set bin
+autocmd BufReadPost,FileReadPost               *.\(gpg\|asc\|pgp\) call s:GPGDecrypt()
 " Switch to normal mode for editing
-autocmd BufReadPost,FileReadPost               *.\(gpg\|pgp\) set nobin
+autocmd BufReadPost,FileReadPost               *.\(gpg\|asc\|pgp\) set nobin
 " Call the autocommand for the file minus .gpg$
-autocmd BufReadPost,FileReadPost               *.\(gpg\|pgp\) execute ":doautocmd BufReadPost " . expand("%:r")
-autocmd BufReadPost,FileReadPost               *.\(gpg\|pgp\) execute ":redraw!"
+autocmd BufReadPost,FileReadPost               *.\(gpg\|asc\|pgp\) execute ":doautocmd BufReadPost " . expand("%:r")
+autocmd BufReadPost,FileReadPost               *.\(gpg\|asc\|pgp\) execute ":redraw!"
 
 " Switch to binary mode before encrypt the file
-autocmd BufWritePre,FileWritePre               *.\(gpg\|pgp\) set bin
+autocmd BufWritePre,FileWritePre               *.\(gpg\|asc\|pgp\) set bin
 " Convert all text to encrypted text before writing
-autocmd BufWritePre,FileWritePre               *.\(gpg\|pgp\) call s:GPGEncrypt()
+autocmd BufWritePre,FileWritePre               *.\(gpg\|asc\|pgp\) call s:GPGEncrypt()
 " Undo the encryption so we are back in the normal text, directly
 " after the file has been written.
-autocmd BufWritePost,FileWritePost             *.\(gpg\|pgp\) silent u
+autocmd BufWritePost,FileWritePost             *.\(gpg\|asc\|pgp\) silent u
 " Switch back to normal mode for editing
-autocmd BufWritePost,FileWritePost             *.\(gpg\|pgp\) set nobin
+autocmd BufWritePost,FileWritePost             *.\(gpg\|asc\|pgp\) set nobin
 augroup END
 " Section: Highlight setup {{{1
 highlight default GPGWarning                   term=reverse ctermfg=Yellow guifg=Yellow
@@ -198,7 +200,6 @@ fun s:GPGDecrypt()
       let start=match(output, "ID [[:xdigit:]]\\{8}", start)
     endw
 
-    "echo "GPGRecipients=\"" . b:GPGRecipients . "\""
   endi
 
   " check if the message is armored
@@ -264,7 +265,7 @@ fun s:GPGEncrypt()
       let gpgid=s:GetField(b:GPGRecipients, ":", field)
     endw
   else
-    if (match(b:GPGOptions, "symmetric:") < 0)
+    if (match(b:GPGOptions, "encrypt:") >= 0)
       echohl GPGError
       echo "There are no recipients!!"
       echo "Please use GPGEditRecipients to correct!!"
@@ -337,7 +338,7 @@ endf
 "
 fun s:GPGEditRecipients()
   " only do this if it isn't already a GPGRecipients_* buffer
-  if (match(bufname("%"), "^\\(GPGRecipients_\\|GPGOptions_\\)") != 0 && match(bufname("%"), "\.\\(gpg\\|pgp\\)$") >= 0)
+  if (match(bufname("%"), "^\\(GPGRecipients_\\|GPGOptions_\\)") != 0 && match(bufname("%"), "\.\\(gpg\\|asc\\|pgp\\)$") >= 0)
 
     " save buffer name
     let buffername=bufname("%")
@@ -469,7 +470,6 @@ fun s:GPGFinishRecipientsBuffer()
   call setbufvar(b:corresponding_to, "GPGRecipients", GPGRecipients)
   call setbufvar(b:corresponding_to, "GPGUnknownRecipients", GPGUnknownRecipients)
   call setbufvar(b:corresponding_to, "&mod", 1)
-  "echo "GPGRecipients=\"" . getbufvar(b:corresponding_to, "GPGRecipients") . "\""
 
   " check if there is any known recipient
   if (strlen(s:GetField(GPGRecipients, ":", 0)) == 0)
@@ -504,7 +504,7 @@ endf
 "
 fun s:GPGEditOptions()
   " only do this if it isn't already a GPGOptions_* buffer
-  if (match(bufname("%"), "^\\(GPGRecipients_\\|GPGOptions_\\)") != 0 && match(bufname("%"), "\.\\(gpg\\|pgp\\)$") >= 0)
+  if (match(bufname("%"), "^\\(GPGRecipients_\\|GPGOptions_\\)") != 0 && match(bufname("%"), "\.\\(gpg\\|asc\\|pgp\\)$") >= 0)
 
     " save buffer name
     let buffername=bufname("%")
@@ -607,7 +607,6 @@ fun s:GPGFinishOptionsBuffer()
   " as modified
   call setbufvar(b:corresponding_to, "GPGOptions", GPGOptions)
   call setbufvar(b:corresponding_to, "&mod", 1)
-  "echo "GPGOptions=\"" . getbufvar(b:corresponding_to, "GPGOptions") . "\""
 
 endf
 
