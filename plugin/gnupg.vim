@@ -9,8 +9,8 @@
 " Description:
 "   
 "   This script implements transparent editing of gpg encrypted files. The
-"   filename must have a ".gpg" suffix. When opening such a file the content
-"   is decrypted, when opening a new file the script will ask for the
+"   filename must have a ".gpg" or ".pgp" suffix. When opening such a file the
+"   content is decrypted, when opening a new file the script will ask for the
 "   recipients of the encrypted file. The file content will be encrypted to
 "   all recipients before it is written. The script turns off viminfo and
 "   swapfile to increase security.
@@ -49,7 +49,7 @@
 " Credits:
 "   Mathieu Clabaut for inspirations through his vimspell.vim script.
 " Section: Plugin header {{{1
-if (exists("loaded_gnupg") || &cp || exists("#BufReadPre#*.gpg"))
+if (exists("loaded_gnupg") || &cp || exists("#BufReadPre#*.\(gpg\|pgp\)"))
   finish
 endi
 let loaded_gnupg = 1
@@ -60,31 +60,31 @@ au!
 
 " First make sure nothing is written to ~/.viminfo while editing
 " an encrypted file.
-autocmd BufNewFile,BufReadPre,FileReadPre      *.gpg set viminfo=
+autocmd BufNewFile,BufReadPre,FileReadPre      *.\(gpg\|pgp\) set viminfo=
 " We don't want a swap file, as it writes unencrypted data to disk
-autocmd BufNewFile,BufReadPre,FileReadPre      *.gpg set noswapfile
+autocmd BufNewFile,BufReadPre,FileReadPre      *.\(gpg\|pgp\) set noswapfile
 " Initialize the internal variables
-autocmd BufNewFile,BufReadPre,FileReadPre      *.gpg call s:GPGInit()
+autocmd BufNewFile,BufReadPre,FileReadPre      *.\(gpg\|pgp\) call s:GPGInit()
 " Force the user to edit the recipient list if he opens a new file
-autocmd BufNewFile                             *.gpg call s:GPGEditRecipients()
+autocmd BufNewFile                             *.\(gpg\|pgp\) call s:GPGEditRecipients()
 " Switch to binary mode to read the encrypted file
-autocmd BufReadPre,FileReadPre                 *.gpg set bin
-autocmd BufReadPost,FileReadPost               *.gpg call s:GPGDecrypt()
+autocmd BufReadPre,FileReadPre                 *.\(gpg\|pgp\) set bin
+autocmd BufReadPost,FileReadPost               *.\(gpg\|pgp\) call s:GPGDecrypt()
 " Switch to normal mode for editing
-autocmd BufReadPost,FileReadPost               *.gpg set nobin
+autocmd BufReadPost,FileReadPost               *.\(gpg\|pgp\) set nobin
 " Call the autocommand for the file minus .gpg$
-autocmd BufReadPost,FileReadPost               *.gpg execute ":doautocmd BufReadPost " . expand("%:r")
-autocmd BufReadPost,FileReadPost               *.gpg execute ":redraw!"
+autocmd BufReadPost,FileReadPost               *.\(gpg\|pgp\) execute ":doautocmd BufReadPost " . expand("%:r")
+autocmd BufReadPost,FileReadPost               *.\(gpg\|pgp\) execute ":redraw!"
 
 " Switch to binary mode before encrypt the file
-autocmd BufWritePre,FileWritePre               *.gpg set bin
+autocmd BufWritePre,FileWritePre               *.\(gpg\|pgp\) set bin
 " Convert all text to encrypted text before writing
-autocmd BufWritePre,FileWritePre               *.gpg call s:GPGEncrypt()
+autocmd BufWritePre,FileWritePre               *.\(gpg\|pgp\) call s:GPGEncrypt()
 " Undo the encryption so we are back in the normal text, directly
 " after the file has been written.
-autocmd BufWritePost,FileWritePost             *.gpg silent u
+autocmd BufWritePost,FileWritePost             *.\(gpg\|pgp\) silent u
 " Switch back to normal mode for editing
-autocmd BufWritePost,FileWritePost             *.gpg set nobin
+autocmd BufWritePost,FileWritePost             *.\(gpg\|pgp\) set nobin
 augroup END
 " Section: Highlight setup {{{1
 highlight default GPGWarning                   term=reverse ctermfg=Yellow guifg=Yellow
