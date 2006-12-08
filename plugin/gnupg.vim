@@ -335,7 +335,7 @@ endf
 "
 fun s:GPGEditRecipients()
   " only do this if it isn't already a GPGRecipients_* buffer
-  if (match(bufname("%"), "^\\(GPGRecipients_\\|GPGOptions_\\)") != 0 && match(bufname("%"), "\.gpg$") >= 0)
+  if (match(bufname("%"), "^\\(GPGRecipients_\\|GPGOptions_\\)") != 0 && match(bufname("%"), "\.\\(gpg\\|pgp\\)$") >= 0)
 
     " save buffer name
     let buffername=bufname("%")
@@ -502,7 +502,7 @@ endf
 "
 fun s:GPGEditOptions()
   " only do this if it isn't already a GPGOptions_* buffer
-  if (match(bufname("%"), "^\\(GPGRecipients_\\|GPGOptions_\\)") != 0 && match(bufname("%"), "\.gpg$") >= 0)
+  if (match(bufname("%"), "^\\(GPGRecipients_\\|GPGOptions_\\)") != 0 && match(bufname("%"), "\.\\(gpg\\|pgp\\)$") >= 0)
 
     " save buffer name
     let buffername=bufname("%")
