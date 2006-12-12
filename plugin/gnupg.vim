@@ -9,11 +9,11 @@
 " Description:
 "   
 "   This script implements transparent editing of gpg encrypted files. The
-"   filename must have a ".gpg" or ".pgp" suffix. When opening such a file the
-"   content is decrypted, when opening a new file the script will ask for the
-"   recipients of the encrypted file. The file content will be encrypted to
-"   all recipients before it is written. The script turns off viminfo and
-"   swapfile to increase security.
+"   filename must have a ".gpg", ".pgp" or ".asc" suffix. When opening such
+"   a file the content is decrypted, when opening a new file the script will
+"   ask for the recipients of the encrypted file. The file content will be
+"   encrypted to all recipients before it is written. The script turns off
+"   viminfo and swapfile to increase security.
 "
 " Installation: 
 "
@@ -49,7 +49,9 @@
 "
 " Credits:
 "   Mathieu Clabaut for inspirations through his vimspell.vim script.
-"   Richard Bronosky for patch to enable native windows support
+"   Richard Bronosky for patch to enable ".pgp" suffix.
+"   Erik Remmelzwaal for patch to enable windows support.
+"
 " Section: Plugin header {{{1
 if (exists("loaded_gnupg") || &cp || exists("#BufReadPre#*.\(gpg\|asc\|pgp\)"))
   finish
