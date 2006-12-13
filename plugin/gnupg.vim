@@ -113,9 +113,9 @@ fun s:GPGInit()
       echo "gpg-agent might not work."
       echohl None
     endif
-    let s:GPGCommand="LANG=C gpg --use-agent"
+    let s:GPGCommand="gpg --use-agent"
   else
-    let s:GPGCommand="LANG=C gpg --no-use-agent"
+    let s:GPGCommand="gpg --no-use-agent"
   endif
 
   " setup shell environment for unix and windows
@@ -125,14 +125,13 @@ fun s:GPGInit()
     " windows specific settings
     let s:shellredir = '>%s'
     let s:shell = &shell
-    let s:stderrredir = '2>&1'
     let s:stderrredirnull = '2>nul'
   else
     " unix specific settings
     let s:shellredir = &shellredir
     let s:shell = 'sh'
-    let s:stderrredir = '2>&1'
     let s:stderrredirnull ='2>/dev/null'
+    let s:GPGCommand="LANG=C " . s:GPGCommand
   endi
 
   " find the supported algorithms
@@ -164,7 +163,7 @@ fun s:GPGDecrypt()
   " find the recipients of the file
   let &shellredir=s:shellredir
   let &shell=s:shell
-  let output=system(s:GPGCommand . " --decrypt --dry-run --batch --no-use-agent " . filename . " " . s:stderrredir)
+  let output=system(s:GPGCommand . " --decrypt --dry-run --batch --no-use-agent --logger-fd 1 " . filename)
   let &shellredir=s:shellredir
   let &shell=s:shellsave
 
@@ -418,7 +417,7 @@ fun s:GPGEditRecipients()
     silent normal! 1Gdd
 
     " jump to the first recipient
-    silent normal! 6G
+    silent normal! G
 
     " add a autocommand to regenerate the recipients after a write
     augroup GPGEditRecipients
@@ -558,7 +557,7 @@ fun s:GPGEditOptions()
     silent normal! 1Gdd
 
     " jump to the first option
-    silent normal! 6G
+    silent normal! G
 
     " add a autocommand to regenerate the options after a write
     augroup GPGEditOptions
