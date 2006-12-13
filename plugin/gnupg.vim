@@ -155,7 +155,8 @@ fun s:GPGDecrypt()
   " get the filename of the current buffer
   let filename=escape(expand("%:p"), ' *?\"'."'")
 
-  " clear GPGRecipients, GPGUnknownRecipients and GPGOptions
+  " clear GPGEncrypted, GPGRecipients, GPGUnknownRecipients and GPGOptions
+  let b:GPGEncrypted=0
   let b:GPGRecipients=""
   let b:GPGUnknownRecipients=""
   let b:GPGOptions=""
@@ -170,6 +171,8 @@ fun s:GPGDecrypt()
   " check if the file is symmetric/asymmetric encrypted
   if (match(output, "gpg: [^ ]\\+ encrypted data") >= 0)
     " file is symmetric encrypted
+    let b:GPGEncrypted=1
+
     let b:GPGOptions=b:GPGOptions . "symmetric:"
 
     let cipher=substitute(output, ".*gpg: \\([^ ]\\+\\) encrypted data.*", "\\1", "")
@@ -181,8 +184,10 @@ fun s:GPGDecrypt()
       echo
       echohl None
     endi
-  else
+  elseif (match(output, "gpg: public key decryption") >= 0)
     " file is asymmetric encrypted
+    let b:GPGEncrypted=1
+
     let b:GPGOptions=b:GPGOptions . "encrypt:"
 
     let start=match(output, "ID [[:xdigit:]]\\{8}")
@@ -200,7 +205,13 @@ fun s:GPGDecrypt()
       end
       let start=match(output, "ID [[:xdigit:]]\\{8}", start)
     endw
-
+  elseif (match(output, "gpg: no valid OpenPGP data found") >= 0)
+    " file is not encrypted
+    let b:GPGEncrypted=0
+    echohl GPGWarning
+    echo "File is not encrypted, all GPG functions disabled!"
+    echohl None
+    return
   endi
 
   " check if the message is armored
@@ -231,6 +242,14 @@ endf
 " encrypts the buffer to all previous recipients
 "
 fun s:GPGEncrypt()
+  " guard for unencrypted files
+  if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
+    echohl GPGWarning
+    echo "File is not encrypted, all GPG functions disabled!"
+    echohl None
+    return
+  endi
+
   let options=""
   let recipients=""
   let field=0
@@ -298,6 +317,14 @@ endf
 " echo the recipients
 "
 fun s:GPGViewRecipients()
+  " guard for unencrypted files
+  if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
+    echohl GPGWarning
+    echo "File is not encrypted, all GPG functions disabled!"
+    echohl None
+    return
+  endi
+
   if (exists("b:GPGRecipients"))
     echo 'This file has following recipients (Unknown recipients have a prepended "!"):'
     " echo the recipients
@@ -338,6 +365,14 @@ endf
 " create a scratch buffer with all recipients to add/remove recipients
 "
 fun s:GPGEditRecipients()
+  " guard for unencrypted files
+  if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
+    echohl GPGWarning
+    echo "File is not encrypted, all GPG functions disabled!"
+    echohl None
+    return
+  endi
+
   " only do this if it isn't already a GPGRecipients_* buffer
   if (match(bufname("%"), "^\\(GPGRecipients_\\|GPGOptions_\\)") != 0 && match(bufname("%"), "\.\\(gpg\\|asc\\|pgp\\)$") >= 0)
 
@@ -431,6 +466,14 @@ endf
 "
 " create a new recipient list from RecipientsBuffer
 fun s:GPGFinishRecipientsBuffer()
+  " guard for unencrypted files
+  if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
+    echohl GPGWarning
+    echo "File is not encrypted, all GPG functions disabled!"
+    echohl None
+    return
+  endi
+
   " clear GPGRecipients and GPGUnknownRecipients
   let GPGRecipients=""
   let GPGUnknownRecipients=""
@@ -485,6 +528,14 @@ endf
 " echo the recipients
 "
 fun s:GPGViewOptions()
+  " guard for unencrypted files
+  if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
+    echohl GPGWarning
+    echo "File is not encrypted, all GPG functions disabled!"
+    echohl None
+    return
+  endi
+
   if (exists("b:GPGOptions"))
     echo 'This file has following options:'
     " echo the options
@@ -504,6 +555,14 @@ endf
 " create a scratch buffer with all recipients to add/remove recipients
 "
 fun s:GPGEditOptions()
+  " guard for unencrypted files
+  if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
+    echohl GPGWarning
+    echo "File is not encrypted, all GPG functions disabled!"
+    echohl None
+    return
+  endi
+
   " only do this if it isn't already a GPGOptions_* buffer
   if (match(bufname("%"), "^\\(GPGRecipients_\\|GPGOptions_\\)") != 0 && match(bufname("%"), "\.\\(gpg\\|asc\\|pgp\\)$") >= 0)
 
@@ -577,6 +636,14 @@ endf
 "
 " create a new option list from OptionsBuffer
 fun s:GPGFinishOptionsBuffer()
+  " guard for unencrypted files
+  if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
+    echohl GPGWarning
+    echo "File is not encrypted, all GPG functions disabled!"
+    echohl None
+    return
+  endi
+
   " clear GPGOptions and GPGUnknownOptions
   let GPGOptions=""
   let GPGUnknownOptions=""
