@@ -86,7 +86,7 @@ autocmd BufWritePre,FileWritePre               *.\(gpg\|asc\|pgp\) set bin
 autocmd BufWritePre,FileWritePre               *.\(gpg\|asc\|pgp\) call s:GPGEncrypt()
 " Undo the encryption so we are back in the normal text, directly
 " after the file has been written.
-autocmd BufWritePost,FileWritePost             *.\(gpg\|asc\|pgp\) silent u
+autocmd BufWritePost,FileWritePost             *.\(gpg\|asc\|pgp\) if (exists("b:GPGEncrypted") && b:GPGEncrypted == 1) | silent u | endi
 " Switch back to normal mode for editing
 autocmd BufWritePost,FileWritePost             *.\(gpg\|asc\|pgp\) set nobin
 augroup END
