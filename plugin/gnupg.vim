@@ -392,6 +392,9 @@ fun s:GPGEditRecipients()
       else
 	" split scratch buffer window
         exe 'silent! sbuffer ' . escape(editbuffername, ' *?\"'."'")
+
+	" add a autocommand to regenerate the recipients after a write
+	autocmd BufHidden,BufUnload <buffer> call s:GPGFinishRecipientsBuffer()
       endi
 
       " empty the buffer
@@ -478,12 +481,19 @@ fun s:GPGFinishRecipientsBuffer()
     return
   endi
 
+  " go to buffer before doing work
+  if (bufnr("%") != expand("<abuf>"))
+    " switch to scratch buffer window
+    exe 'silent! ' . bufwinnr(expand("<afile>")) . "wincmd w"
+  endi
+
   " clear GPGRecipients and GPGUnknownRecipients
   let GPGRecipients=""
   let GPGUnknownRecipients=""
 
   " delete the autocommand
   autocmd! * <buffer>
+
   let currentline=1
   let recipient=getline(currentline)
 
@@ -588,6 +598,9 @@ fun s:GPGEditOptions()
       else
 	" split scratch buffer window
         exe 'silent! sbuffer ' . escape(editbuffername, ' *?\"'."'")
+
+	" add a autocommand to regenerate the options after a write
+	autocmd BufHidden,BufUnload <buffer> call s:GPGFinishOptionsBuffer()
       endi
 
       " empty the buffer
@@ -654,12 +667,19 @@ fun s:GPGFinishOptionsBuffer()
     return
   endi
 
+  " go to buffer before doing work
+  if (bufnr("%") != expand("<abuf>"))
+    " switch to scratch buffer window
+    exe 'silent! ' . bufwinnr(expand("<afile>")) . "wincmd w"
+  endi
+
   " clear GPGOptions and GPGUnknownOptions
   let GPGOptions=""
   let GPGUnknownOptions=""
 
   " delete the autocommand
   autocmd! * <buffer>
+
   let currentline=1
   let option=getline(currentline)
 
