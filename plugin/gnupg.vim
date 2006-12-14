@@ -77,7 +77,7 @@ autocmd BufReadPost,FileReadPost               *.\(gpg\|asc\|pgp\) call s:GPGDec
 " Switch to normal mode for editing
 autocmd BufReadPost,FileReadPost               *.\(gpg\|asc\|pgp\) set nobin
 " Call the autocommand for the file minus .gpg$
-autocmd BufReadPost,FileReadPost               *.\(gpg\|asc\|pgp\) execute ":doautocmd BufReadPost " . expand("%:r")
+autocmd BufReadPost,FileReadPost               *.\(gpg\|asc\|pgp\) execute ":doautocmd BufReadPost " . escape(expand("%:r"), ' *?\"'."'")
 autocmd BufReadPost,FileReadPost               *.\(gpg\|asc\|pgp\) execute ":redraw!"
 
 " Switch to binary mode before encrypt the file
@@ -153,7 +153,7 @@ endf
 "
 fun s:GPGDecrypt()
   " get the filename of the current buffer
-  let filename=escape(expand("%:p"), ' *?\"'."'")
+  let filename=escape(expand("%:p"), '\"')
 
   " clear GPGEncrypted, GPGRecipients, GPGUnknownRecipients and GPGOptions
   let b:GPGEncrypted=0
@@ -164,10 +164,12 @@ fun s:GPGDecrypt()
   " find the recipients of the file
   let &shellredir=s:shellredir
   let &shell=s:shell
-  let output=system(s:GPGCommand . " --decrypt --dry-run --batch --no-use-agent --logger-fd 1 " . filename)
+  let output=system(s:GPGCommand . " --decrypt --dry-run --batch --no-use-agent --logger-fd 1 \"" . filename . "\"")
   let &shellredir=s:shellredir
   let &shell=s:shellsave
 
+  echom ">>>" . s:GPGCommand . " --decrypt --dry-run --batch --no-use-agent --logger-fd 1 \"" . filename . "\"" . "<<<"
+  echom ">>>" . output . "<<<"
   " check if the file is symmetric/asymmetric encrypted
   if (match(output, "gpg: [^ ]\\+ encrypted data") >= 0)
     " file is symmetric encrypted
@@ -377,7 +379,7 @@ fun s:GPGEditRecipients()
   if (match(bufname("%"), "^\\(GPGRecipients_\\|GPGOptions_\\)") != 0 && match(bufname("%"), "\.\\(gpg\\|asc\\|pgp\\)$") >= 0)
 
     " save buffer name
-    let buffername=bufname("%")
+    let buffername=escape(bufname("%"), ' *?\"'."'")
     let editbuffername="GPGRecipients_" . buffername
 
     " create scratch buffer
@@ -479,7 +481,7 @@ fun s:GPGFinishRecipientsBuffer()
   let GPGUnknownRecipients=""
 
   " delete the autocommand
-  exe "au! GPGEditRecipients * " . bufname("%")
+  exe "au! GPGEditRecipients * " . escape(bufname("%"), ' *?\"'."'")
 
   let currentline=1
   let recipient=getline(currentline)
@@ -510,10 +512,11 @@ fun s:GPGFinishRecipientsBuffer()
   endw
 
   " write back the new recipient list to the corresponding buffer and mark it
-  " as modified
+  " as modified. Buffer is now for sure a encrypted buffer.
   call setbufvar(b:corresponding_to, "GPGRecipients", GPGRecipients)
   call setbufvar(b:corresponding_to, "GPGUnknownRecipients", GPGUnknownRecipients)
   call setbufvar(b:corresponding_to, "&mod", 1)
+  call setbufvar(b:corresponding_to, "GPGEncrypted", 1)
 
   " check if there is any known recipient
   if (strlen(s:GetField(GPGRecipients, ":", 0)) == 0)
@@ -567,7 +570,7 @@ fun s:GPGEditOptions()
   if (match(bufname("%"), "^\\(GPGRecipients_\\|GPGOptions_\\)") != 0 && match(bufname("%"), "\.\\(gpg\\|asc\\|pgp\\)$") >= 0)
 
     " save buffer name
-    let buffername=bufname("%")
+    let buffername=escape(bufname("%"), ' *?\"'."'")
     let editbuffername="GPGOptions_" . buffername
 
     " create scratch buffer
@@ -649,7 +652,7 @@ fun s:GPGFinishOptionsBuffer()
   let GPGUnknownOptions=""
 
   " delete the autocommand
-  exe "au! GPGEditOptions * " . bufname("%")
+  exe "au! GPGEditOptions * " . escape(bufname("%"), ' *?\"'."'")
 
   let currentline=1
   let option=getline(currentline)
