@@ -25,17 +25,15 @@
 "
 "   :GPGEditRecipients
 "     Opens a scratch buffer to change the list of recipients. Recipients that
-"     are unknown (not in your public key) are highlighted and have a
-"     prepended "!". Closing the buffer with :x or :bd makes the changes
-"     permanent.
+"     are unknown (not in your public key) are highlighted and have
+"     a prepended "!". Closing the buffer makes the changes permanent.
 "
 "   :GPGViewRecipients
 "     Prints the list of recipients.
 "
 "   :GPGEditOptions
 "     Opens a scratch buffer to change the options for encryption (symmetric,
-"     asymmetric, signing). Closing the buffer with :x or :bd makes the
-"     changes permanent.
+"     asymmetric, signing). Closing the buffer makes the changes permanent.
 "     WARNING: There is no check of the entered options, so you need to know
 "     what you are doing.
 "
@@ -168,8 +166,6 @@ fun s:GPGDecrypt()
   let &shellredir=s:shellredir
   let &shell=s:shellsave
 
-  echom ">>>" . s:GPGCommand . " --decrypt --dry-run --batch --no-use-agent --logger-fd 1 \"" . filename . "\"" . "<<<"
-  echom ">>>" . output . "<<<"
   " check if the file is symmetric/asymmetric encrypted
   if (match(output, "gpg: [^ ]\\+ encrypted data") >= 0)
     " file is symmetric encrypted
@@ -379,14 +375,25 @@ fun s:GPGEditRecipients()
   if (match(bufname("%"), "^\\(GPGRecipients_\\|GPGOptions_\\)") != 0 && match(bufname("%"), "\.\\(gpg\\|asc\\|pgp\\)$") >= 0)
 
     " save buffer name
-    let buffername=escape(bufname("%"), ' *?\"'."'")
+    let buffername=bufname("%")
     let editbuffername="GPGRecipients_" . buffername
 
-    " create scratch buffer
-    exe 'silent! split ' . editbuffername
-
     " check if this buffer exists
-    if (bufexists(editbuffername))
+    if (!bufexists(editbuffername))
+      " create scratch buffer
+      exe 'silent! split ' . escape(editbuffername, ' *?\"'."'")
+
+      " add a autocommand to regenerate the recipients after a write
+      autocmd BufHidden,BufUnload <buffer> call s:GPGFinishRecipientsBuffer()
+    else
+      if (bufwinnr(editbuffername) >= 0)
+	" switch to scratch buffer window
+	exe 'silent! ' . bufwinnr(editbuffername) . "wincmd w"
+      else
+	" split scratch buffer window
+        exe 'silent! sbuffer ' . escape(editbuffername, ' *?\"'."'")
+      endi
+
       " empty the buffer
       silent normal! 1GdG
     endi
@@ -406,7 +413,7 @@ fun s:GPGEditRecipients()
     silent put ='GPG: Please edit the list of recipients, one recipient per line'
     silent put ='GPG: Unknown recipients have a prepended \"!\"'
     silent put ='GPG: Lines beginning with \"GPG:\" are removed automatically'
-    silent put ='GPG: Use :x or :bd to close this buffer'
+    silent put ='GPG: Closing this buffer commits changes'
     silent put ='GPG: ----------------------------------------------------------------------'
 
     " put the recipients in the scratch buffer
@@ -456,11 +463,6 @@ fun s:GPGEditRecipients()
     " jump to the first recipient
     silent normal! G
 
-    " add a autocommand to regenerate the recipients after a write
-    augroup GPGEditRecipients
-    augroup END
-    execute 'au GPGEditRecipients BufHidden ' . editbuffername . ' call s:GPGFinishRecipientsBuffer()'
-
   endi
 endf
 
@@ -481,8 +483,7 @@ fun s:GPGFinishRecipientsBuffer()
   let GPGUnknownRecipients=""
 
   " delete the autocommand
-  exe "au! GPGEditRecipients * " . escape(bufname("%"), ' *?\"'."'")
-
+  autocmd! * <buffer>
   let currentline=1
   let recipient=getline(currentline)
 
@@ -570,14 +571,25 @@ fun s:GPGEditOptions()
   if (match(bufname("%"), "^\\(GPGRecipients_\\|GPGOptions_\\)") != 0 && match(bufname("%"), "\.\\(gpg\\|asc\\|pgp\\)$") >= 0)
 
     " save buffer name
-    let buffername=escape(bufname("%"), ' *?\"'."'")
+    let buffername=bufname("%")
     let editbuffername="GPGOptions_" . buffername
 
-    " create scratch buffer
-    exe 'silent! split ' . editbuffername
-
     " check if this buffer exists
-    if (bufexists(editbuffername))
+    if (!bufexists(editbuffername))
+      " create scratch buffer
+      exe 'silent! split ' . escape(editbuffername, ' *?\"'."'")
+
+      " add a autocommand to regenerate the options after a write
+      autocmd BufHidden,BufUnload <buffer> call s:GPGFinishOptionsBuffer()
+    else
+      if (bufwinnr(editbuffername) >= 0)
+	" switch to scratch buffer window
+	exe 'silent! ' . bufwinnr(editbuffername) . "wincmd w"
+      else
+	" split scratch buffer window
+        exe 'silent! sbuffer ' . escape(editbuffername, ' *?\"'."'")
+      endi
+
       " empty the buffer
       silent normal! 1GdG
     endi
@@ -600,7 +612,7 @@ fun s:GPGEditOptions()
     silent put ='GPG: Please edit the list of options, one option per line'
     silent put ='GPG: Please refer to the gpg documentation for valid options'
     silent put ='GPG: Lines beginning with \"GPG:\" are removed automatically'
-    silent put ='GPG: Use :x or :bd to close this buffer'
+    silent put ='GPG: Closing this buffer commits changes'
     silent put ='GPG: ----------------------------------------------------------------------'
 
     " put the options in the scratch buffer
@@ -620,11 +632,6 @@ fun s:GPGEditOptions()
 
     " jump to the first option
     silent normal! G
-
-    " add a autocommand to regenerate the options after a write
-    augroup GPGEditOptions
-    augroup END
-    execute 'au GPGEditOptions BufHidden ' . editbuffername . ' call s:GPGFinishOptionsBuffer()'
 
     " define highlight
     if (has("syntax") && exists("g:syntax_on"))
@@ -652,8 +659,7 @@ fun s:GPGFinishOptionsBuffer()
   let GPGUnknownOptions=""
 
   " delete the autocommand
-  exe "au! GPGEditOptions * " . escape(bufname("%"), ' *?\"'."'")
-
+  autocmd! * <buffer>
   let currentline=1
   let option=getline(currentline)
 
