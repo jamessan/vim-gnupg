@@ -45,6 +45,12 @@
 "   g:GPGUseAgent
 "     If set to 0 a possible available gpg-agent won't be used. Defaults to 1.
 "
+"   g:GPGPreferSymmetric
+"     If set to 1 symmetric encryption is preferred for new files. Defaults to 0.
+"
+"   g:GPGPreferArmor
+"     If set to 1 armored data is preferred for new files. Defaults to 0.
+"
 " Credits:
 "   Mathieu Clabaut for inspirations through his vimspell.vim script.
 "   Richard Bronosky for patch to enable ".pgp" suffix.
@@ -68,8 +74,9 @@ autocmd BufNewFile,BufReadPre,FileReadPre      *.\(gpg\|asc\|pgp\) set viminfo=
 autocmd BufNewFile,BufReadPre,FileReadPre      *.\(gpg\|asc\|pgp\) set noswapfile
 " Initialize the internal variables
 autocmd BufNewFile,BufReadPre,FileReadPre      *.\(gpg\|asc\|pgp\) call s:GPGInit()
-" Force the user to edit the recipient list if he opens a new file
-autocmd BufNewFile                             *.\(gpg\|asc\|pgp\) call s:GPGEditRecipients()
+" Force the user to edit the recipient list if he opens a new file and public
+" keys are preferred
+autocmd BufNewFile                             *.\(gpg\|asc\|pgp\) if (exists("g:GPGPreferSymmetric") && g:GPGPreferSymmetric == 0) | call s:GPGEditRecipients() | endi
 " Switch to binary mode to read the encrypted file
 autocmd BufReadPre,FileReadPre                 *.\(gpg\|asc\|pgp\) set bin
 autocmd BufReadPost,FileReadPost               *.\(gpg\|asc\|pgp\) call s:GPGDecrypt()
@@ -102,6 +109,16 @@ fun s:GPGInit()
   " check if gpg-agent is allowed
   if (!exists("g:GPGUseAgent"))
     let g:GPGUseAgent = 1
+  endif
+
+  " check if symmetric encryption is preferred
+  if (!exists("g:GPGPreferSymmetric"))
+    let g:GPGPreferSymmetric = 0
+  endif
+
+  " check if armored files are preferred
+  if (!exists("g:GPGPreferArmor"))
+    let g:GPGPreferArmor = 0
   endif
 
   " determine if gnupg can use the gpg-agent
@@ -255,7 +272,14 @@ fun s:GPGEncrypt()
 
   " built list of options
   if (!exists("b:GPGOptions") || strlen(b:GPGOptions) == 0)
-    let b:GPGOptions="encrypt:"
+    if (exists("g:GPGPreferSymmetric") && g:GPGPreferSymmetric == 1)
+      let b:GPGOptions="symmetric:"
+    else
+      let b:GPGOptions="encrypt:"
+    endi
+    if (exists("g:GPGPreferArmor") && g:GPGPreferArmor == 1)
+      let b:GPGOptions=b:GPGOptions . "armor:"
+    endi
   endi
   let field=0
   let option=s:GetField(b:GPGOptions, ":", field)
