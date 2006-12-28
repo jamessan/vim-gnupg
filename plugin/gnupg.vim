@@ -147,7 +147,7 @@ fun s:GPGInit()
     let s:shellredir = &shellredir
     let s:shell = 'sh'
     let s:stderrredirnull ='2>/dev/null'
-    let s:GPGCommand="LANG=C " . s:GPGCommand
+    let s:GPGCommand="LANG=C LC_ALL=C " . s:GPGCommand
   endi
 
   " find the supported algorithms
