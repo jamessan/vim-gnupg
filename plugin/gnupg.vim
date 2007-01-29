@@ -154,7 +154,7 @@ fun s:GPGInit()
   let &shellredir=s:shellredir
   let &shell=s:shell
   let output=system(s:GPGCommand . " --version")
-  let &shellredir=s:shellredir
+  let &shellredir=s:shellredirsave
   let &shell=s:shellsave
 
   let s:GPGPubkey=substitute(output, ".*Pubkey: \\(.\\{-}\\)\n.*", "\\1", "")
@@ -181,7 +181,7 @@ fun s:GPGDecrypt()
   let &shellredir=s:shellredir
   let &shell=s:shell
   let output=system(s:GPGCommand . " --decrypt --dry-run --batch --no-use-agent --logger-fd 1 \"" . filename . "\"")
-  let &shellredir=s:shellredir
+  let &shellredir=s:shellredirsave
   let &shell=s:shellsave
 
   " check if the file is symmetric/asymmetric encrypted
@@ -241,7 +241,7 @@ fun s:GPGDecrypt()
   let &shellredir=s:shellredir
   let &shell=s:shell
   exec "'[,']!" . s:GPGCommand . " --quiet --decrypt " . s:stderrredirnull
-  let &shellredir=s:shellredir
+  let &shellredir=s:shellredirsave
   let &shell=s:shellsave
   if (v:shell_error) " message could not be decrypted
     silent u
@@ -321,7 +321,7 @@ fun s:GPGEncrypt()
   let &shellredir=s:shellredir
   let &shell=s:shell
   silent exec "'[,']!" . s:GPGCommand . " --quiet --no-encrypt-to " . options . recipients . " " . s:stderrredirnull
-  let &shellredir=s:shellredir
+  let &shellredir=s:shellredirsave
   let &shell=s:shellsave
   if (v:shell_error) " message could not be encrypted
     silent u
@@ -741,7 +741,7 @@ fun s:GPGNameToID(name)
   let &shellredir=s:shellredir
   let &shell=s:shell
   let output=system(s:GPGCommand . " --quiet --with-colons --fixed-list-mode --list-keys \"" . a:name . "\"")
-  let &shellredir=s:shellredir
+  let &shellredir=s:shellredirsave
   let &shell=s:shellsave
 
   " parse the output of gpg
@@ -805,7 +805,7 @@ fun s:GPGIDToName(identity)
   let &shellredir=s:shellredir
   let &shell=s:shell
   let output=system(s:GPGCommand . " --quiet --with-colons --fixed-list-mode --list-keys " . a:identity )
-  let &shellredir=s:shellredir
+  let &shellredir=s:shellredirsave
   let &shell=s:shellsave
 
   " parse the output of gpg
