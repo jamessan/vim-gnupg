@@ -1,5 +1,5 @@
 " Name: gnupg.vim
-" Version: $Id: gnupg.vim 1472 2006-12-15 13:09:40Z mbr $
+" Version: $Id: gnupg.vim 1605 2007-03-01 09:58:04Z mbr $
 " Author: Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
 " Licence: This program is free software; you can redistribute it and/or
@@ -45,6 +45,12 @@
 "   g:GPGUseAgent
 "     If set to 0 a possible available gpg-agent won't be used. Defaults to 1.
 "
+"   g:GPGPreferSymmetric
+"     If set to 1 symmetric encryption is preferred for new files. Defaults to 0.
+"
+"   g:GPGPreferArmor
+"     If set to 1 armored data is preferred for new files. Defaults to 0.
+"
 " Credits:
 "   Mathieu Clabaut for inspirations through his vimspell.vim script.
 "   Richard Bronosky for patch to enable ".pgp" suffix.
@@ -68,8 +74,9 @@ autocmd BufNewFile,BufReadPre,FileReadPre      *.\(gpg\|asc\|pgp\) set viminfo=
 autocmd BufNewFile,BufReadPre,FileReadPre      *.\(gpg\|asc\|pgp\) set noswapfile
 " Initialize the internal variables
 autocmd BufNewFile,BufReadPre,FileReadPre      *.\(gpg\|asc\|pgp\) call s:GPGInit()
-" Force the user to edit the recipient list if he opens a new file
-autocmd BufNewFile                             *.\(gpg\|asc\|pgp\) call s:GPGEditRecipients()
+" Force the user to edit the recipient list if he opens a new file and public
+" keys are preferred
+autocmd BufNewFile                             *.\(gpg\|asc\|pgp\) if (exists("g:GPGPreferSymmetric") && g:GPGPreferSymmetric == 0) | call s:GPGEditRecipients() | endi
 " Switch to binary mode to read the encrypted file
 autocmd BufReadPre,FileReadPre                 *.\(gpg\|asc\|pgp\) set bin
 autocmd BufReadPost,FileReadPost               *.\(gpg\|asc\|pgp\) call s:GPGDecrypt()
@@ -104,6 +111,16 @@ fun s:GPGInit()
     let g:GPGUseAgent = 1
   endif
 
+  " check if symmetric encryption is preferred
+  if (!exists("g:GPGPreferSymmetric"))
+    let g:GPGPreferSymmetric = 0
+  endif
+
+  " check if armored files are preferred
+  if (!exists("g:GPGPreferArmor"))
+    let g:GPGPreferArmor = 0
+  endif
+
   " determine if gnupg can use the gpg-agent
   if (exists("$GPG_AGENT_INFO") && g:GPGUseAgent == 1)
     if (!exists("$GPG_TTY"))
@@ -115,6 +132,13 @@ fun s:GPGInit()
     let s:GPGCommand="gpg --use-agent"
   else
     let s:GPGCommand="gpg --no-use-agent"
+  endif
+
+  " don't use tty in gvim
+  " FIXME find a better way to avoid an error.
+  "       with this solution only --use-agent will work
+  if has("gui_running")
+    let s:GPGCommand=s:GPGCommand . " --no-tty"
   endif
 
   " setup shell environment for unix and windows
@@ -130,14 +154,14 @@ fun s:GPGInit()
     let s:shellredir = &shellredir
     let s:shell = 'sh'
     let s:stderrredirnull ='2>/dev/null'
-    let s:GPGCommand="LANG=C " . s:GPGCommand
+    let s:GPGCommand="LANG=C LC_ALL=C " . s:GPGCommand
   endi
 
   " find the supported algorithms
   let &shellredir=s:shellredir
   let &shell=s:shell
   let output=system(s:GPGCommand . " --version")
-  let &shellredir=s:shellredir
+  let &shellredir=s:shellredirsave
   let &shell=s:shellsave
 
   let s:GPGPubkey=substitute(output, ".*Pubkey: \\(.\\{-}\\)\n.*", "\\1", "")
@@ -164,7 +188,7 @@ fun s:GPGDecrypt()
   let &shellredir=s:shellredir
   let &shell=s:shell
   let output=system(s:GPGCommand . " --decrypt --dry-run --batch --no-use-agent --logger-fd 1 \"" . filename . "\"")
-  let &shellredir=s:shellredir
+  let &shellredir=s:shellredirsave
   let &shell=s:shellsave
 
   " check if the file is symmetric/asymmetric encrypted
@@ -224,7 +248,7 @@ fun s:GPGDecrypt()
   let &shellredir=s:shellredir
   let &shell=s:shell
   exec "'[,']!" . s:GPGCommand . " --quiet --decrypt " . s:stderrredirnull
-  let &shellredir=s:shellredir
+  let &shellredir=s:shellredirsave
   let &shell=s:shellsave
   if (v:shell_error) " message could not be decrypted
     silent u
@@ -255,7 +279,14 @@ fun s:GPGEncrypt()
 
   " built list of options
   if (!exists("b:GPGOptions") || strlen(b:GPGOptions) == 0)
-    let b:GPGOptions="encrypt:"
+    if (exists("g:GPGPreferSymmetric") && g:GPGPreferSymmetric == 1)
+      let b:GPGOptions="symmetric:"
+    else
+      let b:GPGOptions="encrypt:"
+    endi
+    if (exists("g:GPGPreferArmor") && g:GPGPreferArmor == 1)
+      let b:GPGOptions=b:GPGOptions . "armor:"
+    endi
   endi
   let field=0
   let option=s:GetField(b:GPGOptions, ":", field)
@@ -297,7 +328,7 @@ fun s:GPGEncrypt()
   let &shellredir=s:shellredir
   let &shell=s:shell
   silent exec "'[,']!" . s:GPGCommand . " --quiet --no-encrypt-to " . options . recipients . " " . s:stderrredirnull
-  let &shellredir=s:shellredir
+  let &shellredir=s:shellredirsave
   let &shell=s:shellsave
   if (v:shell_error) " message could not be encrypted
     silent u
@@ -717,7 +748,7 @@ fun s:GPGNameToID(name)
   let &shellredir=s:shellredir
   let &shell=s:shell
   let output=system(s:GPGCommand . " --quiet --with-colons --fixed-list-mode --list-keys \"" . a:name . "\"")
-  let &shellredir=s:shellredir
+  let &shellredir=s:shellredirsave
   let &shell=s:shellsave
 
   " parse the output of gpg
@@ -781,7 +812,7 @@ fun s:GPGIDToName(identity)
   let &shellredir=s:shellredir
   let &shell=s:shell
   let output=system(s:GPGCommand . " --quiet --with-colons --fixed-list-mode --list-keys " . a:identity )
-  let &shellredir=s:shellredir
+  let &shellredir=s:shellredirsave
   let &shell=s:shellsave
 
   " parse the output of gpg
