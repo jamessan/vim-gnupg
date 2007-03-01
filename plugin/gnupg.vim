@@ -134,6 +134,13 @@ fun s:GPGInit()
     let s:GPGCommand="gpg --no-use-agent"
   endif
 
+  " don't use tty in gvim
+  " FIXME find a better way to avoid an error.
+  "       with this solution only --use-agent will work
+  if has("gui_running")
+    let s:GPGCommand=s:GPGCommand . " --no-tty"
+  endif
+
   " setup shell environment for unix and windows
   let s:shellredirsave=&shellredir
   let s:shellsave=&shell
