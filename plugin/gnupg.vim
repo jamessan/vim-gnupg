@@ -58,10 +58,10 @@
 "   testing.
 "
 " Section: Plugin header {{{1
-if (exists("loaded_gnupg") || &cp || exists("#BufReadPre#*.\(gpg\|asc\|pgp\)"))
+if (exists("g:loaded_gnupg") || &cp || exists("#BufReadPre#*.\(gpg\|asc\|pgp\)"))
   finish
 endi
-let loaded_gnupg = 1
+let g:loaded_gnupg = "$Revision$"
 
 " Section: Autocmd setup {{{1
 augroup GnuPG
