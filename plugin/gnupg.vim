@@ -1,11 +1,11 @@
 " Name: gnupg.vim
-" Version: $Id$
-" Author: Markus Braun <markus.braun@krawel.de>
-" Summary: Vim plugin for transparent editing of gpg encrypted files.
-" Licence: This program is free software; you can redistribute it and/or
-"          modify it under the terms of the GNU General Public License.
-"          See http://www.gnu.org/copyleft/gpl.txt
-" Section: Documentation {{{1
+" Version:  $Id$
+" Author:   Markus Braun <markus.braun@krawel.de>
+" Summary:  Vim plugin for transparent editing of gpg encrypted files.
+" Licence:  This program is free software; you can redistribute it and/or
+"           modify it under the terms of the GNU General Public License.
+"           See http://www.gnu.org/copyleft/gpl.txt
+" Section:  Documentation {{{1
 " Description:
 "   
 "   This script implements transparent editing of gpg encrypted files. The
@@ -56,6 +56,7 @@
 "   Richard Bronosky for patch to enable ".pgp" suffix.
 "   Erik Remmelzwaal for patch to enable windows support and patient beta
 "   testing.
+"   Lars Becker for patch to make gpg2 working.
 "
 " Section: Plugin header {{{1
 if (exists("g:loaded_gnupg") || &cp || exists("#BufReadPre#*.\(gpg\|asc\|pgp\)"))
@@ -187,12 +188,12 @@ fun s:GPGDecrypt()
   " find the recipients of the file
   let &shellredir=s:shellredir
   let &shell=s:shell
-  let output=system(s:GPGCommand . " --decrypt --dry-run --batch --no-use-agent --logger-fd 1 \"" . filename . "\"")
+  let output=system(s:GPGCommand . " --verbose --decrypt --dry-run --batch --no-use-agent --passphrase \"ThisIsHopefullyNotThePassphraseOfAnyone\" --logger-fd 1 \"" . filename . "\"")
   let &shellredir=s:shellredirsave
   let &shell=s:shellsave
 
   " check if the file is symmetric/asymmetric encrypted
-  if (match(output, "gpg: [^ ]\\+ encrypted data") >= 0)
+  if (match(output, "gpg: encrypted with [[:digit:]]\\+ passphrase") >= 0)
     " file is symmetric encrypted
     let b:GPGEncrypted=1
 
@@ -207,7 +208,7 @@ fun s:GPGDecrypt()
       echo
       echohl None
     endi
-  elseif (match(output, "gpg: public key decryption") >= 0)
+  elseif (match(output, "gpg: public key is [[:xdigit:]]\\{8}") >= 0)
     " file is asymmetric encrypted
     let b:GPGEncrypted=1
 
@@ -228,7 +229,7 @@ fun s:GPGDecrypt()
       end
       let start=match(output, "ID [[:xdigit:]]\\{8}", start)
     endw
-  elseif (match(output, "gpg: no valid OpenPGP data found") >= 0)
+  else
     " file is not encrypted
     let b:GPGEncrypted=0
     echohl GPGWarning
