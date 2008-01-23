@@ -293,9 +293,9 @@ endf
 " encrypts the buffer to all previous recipients
 "
 fun s:GPGEncrypt()
-  " save cursor position
-  let s:GPGCursorPosition = getpos(".")
-  call s:GPGDebug(2, "saved cursor position " . string(s:GPGCursorPosition))
+  " save window view
+  let s:GPGWindowView = winsaveview()
+  call s:GPGDebug(2, "saved window view " . string(s:GPGWindowView))
 
   " store encoding and switch to a safe one
   if &fileencoding != &encoding
@@ -412,9 +412,9 @@ fun s:GPGEncryptPost()
     call s:GPGDebug(2, "restored encoding \"" . &encoding . "\"")
   endi
 
-  " restore cursor position
-  call setpos('.', s:GPGCursorPosition)
-  call s:GPGDebug(2, "restored cursor position " . string(s:GPGCursorPosition))
+  " restore window view
+  call winrestview(s:GPGWindowView)
+  call s:GPGDebug(2, "restored window view" . string(s:GPGWindowView))
 
   " refresh screen
   redraw!
