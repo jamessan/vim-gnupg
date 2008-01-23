@@ -297,6 +297,16 @@ fun s:GPGEncrypt()
   let s:GPGCursorPosition = getpos(".")
   call s:GPGDebug(2, "saved cursor position " . string(s:GPGCursorPosition))
 
+  " store encoding and switch to a safe one
+  if &fileencoding != &encoding
+    let s:GPGEncoding = &encoding
+    let &encoding = &fileencoding
+    call s:GPGDebug(2, "encoding was \"" . s:GPGEncoding . "\", switched to \"" . &encoding . "\"")
+  else
+    let s:GPGEncoding = ""
+    call s:GPGDebug(2, "encoding and fileencoding are the same (\"" . &encoding . "\"), not switching")
+  endi
+
   " switch buffer to binary mode
   set bin
 
@@ -395,6 +405,12 @@ fun s:GPGEncryptPost()
 
   " switch back from binary mode
   set nobin
+
+  " restore encoding
+  if s:GPGEncoding != ""
+    let &encoding = s:GPGEncoding
+    call s:GPGDebug(2, "restored encoding \"" . &encoding . "\"")
+  endi
 
   " restore cursor position
   call setpos('.', s:GPGCursorPosition)
