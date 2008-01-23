@@ -95,9 +95,6 @@ highlight default link GPGHighlightUnknownRecipient ErrorMsg
 " initialize the plugin
 "
 fun s:GPGInit()
-  " print version
-  call s:GPGDebug(1, "gnupg.vim ". g:loaded_gnupg)
-
   " first make sure nothing is written to ~/.viminfo while editing
   " an encrypted file.
   set viminfo=
@@ -124,6 +121,9 @@ fun s:GPGInit()
   if (!exists("g:GPGDebugLevel"))
     let g:GPGDebugLevel = 0
   endif
+ 
+  " print version
+  call s:GPGDebug(1, "gnupg.vim ". g:loaded_gnupg)
 
   " determine if gnupg can use the gpg-agent
   if (exists("$GPG_AGENT_INFO") && g:GPGUseAgent == 1)
