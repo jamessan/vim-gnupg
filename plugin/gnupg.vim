@@ -23,6 +23,7 @@
 "
 " Commands:
 "
+"   :GPGRecipients
 "   :GPGEditRecipients
 "     Opens a scratch buffer to change the list of recipients. Recipients that
 "     are unknown (not in your public key) are highlighted and have
@@ -31,6 +32,7 @@
 "   :GPGViewRecipients
 "     Prints the list of recipients.
 "
+"   :GPGOptions
 "   :GPGEditOptions
 "     Opens a scratch buffer to change the options for encryption (symmetric,
 "     asymmetric, signing). Closing the buffer makes the changes permanent.
@@ -982,8 +984,10 @@ endf
 
 " Section: Command definitions {{{1
 com! GPGViewRecipients call s:GPGViewRecipients()
+com! GPGRecipients call s:GPGEditRecipients()
 com! GPGEditRecipients call s:GPGEditRecipients()
 com! GPGViewOptions call s:GPGViewOptions()
+com! GPGOptions call s:GPGEditOptions()
 com! GPGEditOptions call s:GPGEditOptions()
 
 " vim600: foldmethod=marker:foldlevel=0
