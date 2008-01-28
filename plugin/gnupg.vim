@@ -504,7 +504,7 @@ fun s:GPGEditRecipients()
       exe 'silent! split ' . escape(editbuffername, ' *?\"'."'")
 
       " add a autocommand to regenerate the recipients after a write
-      autocmd BufHidden,BufUnload <buffer> call s:GPGFinishRecipientsBuffer()
+      autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishRecipientsBuffer()
     else
       if (bufwinnr(editbuffername) >= 0)
 	" switch to scratch buffer window
@@ -514,7 +514,7 @@ fun s:GPGEditRecipients()
         exe 'silent! sbuffer ' . escape(editbuffername, ' *?\"'."'")
 
 	" add a autocommand to regenerate the recipients after a write
-	autocmd BufHidden,BufUnload <buffer> call s:GPGFinishRecipientsBuffer()
+	autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishRecipientsBuffer()
       endi
 
       " empty the buffer
@@ -522,7 +522,8 @@ fun s:GPGEditRecipients()
     endi
 
     " Mark the buffer as a scratch buffer
-    setlocal buftype=nofile
+    setlocal buftype=acwrite
+    setlocal bufhidden=hide
     setlocal noswapfile
     setlocal nowrap
     setlocal nobuflisted
@@ -655,6 +656,9 @@ fun s:GPGFinishRecipientsBuffer()
     echo 'There are no known recipients!'
     echohl None
   endi
+
+  " reset modified flag
+  set nomodified
 endf
 
 " Function: s:GPGViewOptions() {{{2
@@ -710,7 +714,7 @@ fun s:GPGEditOptions()
       exe 'silent! split ' . escape(editbuffername, ' *?\"'."'")
 
       " add a autocommand to regenerate the options after a write
-      autocmd BufHidden,BufUnload <buffer> call s:GPGFinishOptionsBuffer()
+      autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishOptionsBuffer()
     else
       if (bufwinnr(editbuffername) >= 0)
 	" switch to scratch buffer window
@@ -720,7 +724,7 @@ fun s:GPGEditOptions()
         exe 'silent! sbuffer ' . escape(editbuffername, ' *?\"'."'")
 
 	" add a autocommand to regenerate the options after a write
-	autocmd BufHidden,BufUnload <buffer> call s:GPGFinishOptionsBuffer()
+	autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishOptionsBuffer()
       endi
 
       " empty the buffer
@@ -825,6 +829,8 @@ fun s:GPGFinishOptionsBuffer()
   call setbufvar(b:corresponding_to, "GPGOptions", GPGOptions)
   call setbufvar(b:corresponding_to, "&mod", 1)
 
+  " reset modified flag
+  set nomodified
 endf
 
 " Function: s:GPGNameToID(name) {{{2
