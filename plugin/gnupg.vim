@@ -71,22 +71,21 @@ let g:loaded_gnupg = "$Revision$"
 
 " Section: Autocmd setup {{{1
 augroup GnuPG
-autocmd!
+  autocmd!
 
-" initialize the internal variables
-autocmd BufNewFile,BufReadPre,FileReadPre      *.\(gpg\|asc\|pgp\) call s:GPGInit()
-" force the user to edit the recipient list if he opens a new file and public
-" keys are preferred
-autocmd BufNewFile                             *.\(gpg\|asc\|pgp\) if (exists("g:GPGPreferSymmetric") && g:GPGPreferSymmetric == 0) | call s:GPGEditRecipients() | endi
-" do the decryption
-autocmd BufReadPost,FileReadPost               *.\(gpg\|asc\|pgp\) call s:GPGDecrypt()
+  " initialize the internal variables
+  autocmd BufNewFile,BufReadPre,FileReadPre      *.\(gpg\|asc\|pgp\) call s:GPGInit()
+  " force the user to edit the recipient list if he opens a new file and public
+  " keys are preferred
+  autocmd BufNewFile                             *.\(gpg\|asc\|pgp\) if (exists("g:GPGPreferSymmetric") && g:GPGPreferSymmetric == 0) | call s:GPGEditRecipients() | endi
+  " do the decryption
+  autocmd BufReadPost,FileReadPost               *.\(gpg\|asc\|pgp\) call s:GPGDecrypt()
 
-" convert all text to encrypted text before writing
-autocmd BufWritePre,FileWritePre               *.\(gpg\|asc\|pgp\) call s:GPGEncrypt()
-" undo the encryption so we are back in the normal text, directly
-" after the file has been written.
-autocmd BufWritePost,FileWritePost             *.\(gpg\|asc\|pgp\) call s:GPGEncryptPost()
-
+  " convert all text to encrypted text before writing
+  autocmd BufWritePre,FileWritePre               *.\(gpg\|asc\|pgp\) call s:GPGEncrypt()
+  " undo the encryption so we are back in the normal text, directly
+  " after the file has been written.
+  autocmd BufWritePost,FileWritePost             *.\(gpg\|asc\|pgp\) call s:GPGEncryptPost()
 augroup END
 
 " Section: Highlight setup {{{1
@@ -131,7 +130,7 @@ fun s:GPGInit()
   if (!exists("g:GPGDebugLevel"))
     let g:GPGDebugLevel = 0
   endif
- 
+
   " print version
   call s:GPGDebug(1, "gnupg.vim ". g:loaded_gnupg)
 
@@ -242,13 +241,13 @@ fun s:GPGDecrypt()
       call s:GPGDebug(1, "recipient is " . recipient)
       let name=s:GPGNameToID(recipient)
       if (strlen(name) > 0)
-	let b:GPGRecipients=b:GPGRecipients . name . ":" 
+        let b:GPGRecipients=b:GPGRecipients . name . ":" 
         call s:GPGDebug(1, "name of recipient is " . name)
       else
-	let b:GPGUnknownRecipients=b:GPGUnknownRecipients . recipient . ":" 
-	echohl GPGWarning
-	echo "The recipient " . recipient . " is not in your public keyring!"
-	echohl None
+        let b:GPGUnknownRecipients=b:GPGUnknownRecipients . recipient . ":" 
+        echohl GPGWarning
+        echo "The recipient " . recipient . " is not in your public keyring!"
+        echohl None
       end
       let start=match(output, "gpg: public key is [[:xdigit:]]\\{8}", start)
     endw
@@ -507,14 +506,14 @@ fun s:GPGEditRecipients()
       autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishRecipientsBuffer()
     else
       if (bufwinnr(editbuffername) >= 0)
-	" switch to scratch buffer window
-	exe 'silent! ' . bufwinnr(editbuffername) . "wincmd w"
+        " switch to scratch buffer window
+        exe 'silent! ' . bufwinnr(editbuffername) . "wincmd w"
       else
-	" split scratch buffer window
+        " split scratch buffer window
         exe 'silent! sbuffer ' . escape(editbuffername, ' *?\"'."'")
 
-	" add a autocommand to regenerate the recipients after a write
-	autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishRecipientsBuffer()
+        " add a autocommand to regenerate the recipients after a write
+        autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishRecipientsBuffer()
       endi
 
       " empty the buffer
@@ -630,12 +629,12 @@ fun s:GPGFinishRecipientsBuffer()
     if (strlen(recipient) > 0)
       let gpgid=s:GPGNameToID(recipient)
       if (strlen(gpgid) > 0)
-	let GPGRecipients=GPGRecipients . gpgid . ":" 
+        let GPGRecipients=GPGRecipients . gpgid . ":" 
       else
-	let GPGUnknownRecipients=GPGUnknownRecipients . recipient . ":"
-	echohl GPGWarning
-	echo "The recipient " . recipient . " is not in your public keyring!"
-	echohl None
+        let GPGUnknownRecipients=GPGUnknownRecipients . recipient . ":"
+        echohl GPGWarning
+        echo "The recipient " . recipient . " is not in your public keyring!"
+        echohl None
       end
     endi
 
@@ -717,14 +716,14 @@ fun s:GPGEditOptions()
       autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishOptionsBuffer()
     else
       if (bufwinnr(editbuffername) >= 0)
-	" switch to scratch buffer window
-	exe 'silent! ' . bufwinnr(editbuffername) . "wincmd w"
+        " switch to scratch buffer window
+        exe 'silent! ' . bufwinnr(editbuffername) . "wincmd w"
       else
-	" split scratch buffer window
+        " split scratch buffer window
         exe 'silent! sbuffer ' . escape(editbuffername, ' *?\"'."'")
 
-	" add a autocommand to regenerate the options after a write
-	autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishOptionsBuffer()
+        " add a autocommand to regenerate the options after a write
+        autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishOptionsBuffer()
       endi
 
       " empty the buffer
@@ -863,24 +862,24 @@ fun s:GPGNameToID(name)
     " search for the next uid
     if (pub_seen == 1)
       if (s:GetField(linecontent, ":", 0) == "uid")
-	if (uid_seen == 0)
-	  let choices=choices . counter . ": " . s:GetField(linecontent, ":", 9) . "\n"
-	  let counter=counter+1
-	  let uid_seen=1
-	else
-	  let choices=choices . "   " . s:GetField(linecontent, ":", 9) . "\n"
-	endi
+        if (uid_seen == 0)
+          let choices=choices . counter . ": " . s:GetField(linecontent, ":", 9) . "\n"
+          let counter=counter+1
+          let uid_seen=1
+        else
+          let choices=choices . "   " . s:GetField(linecontent, ":", 9) . "\n"
+        endi
       else
-	let uid_seen=0
-	let pub_seen=0
+        let uid_seen=0
+        let pub_seen=0
       endi
     endi
 
     " search for the next pub
     if (pub_seen == 0)
       if (s:GetField(linecontent, ":", 0) == "pub")
-	let gpgids=gpgids . s:GetField(linecontent, ":", 4) . ":"
-	let pub_seen=1
+        let gpgids=gpgids . s:GetField(linecontent, ":", 4) . ":"
+        let pub_seen=1
       endi
     endi
 
@@ -929,13 +928,13 @@ fun s:GPGIDToName(identity)
   while (strlen(linecontent) && !finish)
     if (pub_seen == 0) " search for the next pub
       if (s:GetField(linecontent, ":", 0) == "pub")
-	let pub_seen=1
+        let pub_seen=1
       endi
     else " search for the next uid
       if (s:GetField(linecontent, ":", 0) == "uid")
-	let pub_seen=0
-	let finish=1
-	let uid=s:GetField(linecontent, ":", 9)
+        let pub_seen=0
+        let finish=1
+        let uid=s:GetField(linecontent, ":", 9)
       endi
     endi
 
