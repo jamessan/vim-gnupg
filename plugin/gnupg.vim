@@ -303,8 +303,10 @@ endf
 "
 fun s:GPGEncrypt()
   " save window view
-  let s:GPGWindowView = winsaveview()
-  call s:GPGDebug(2, "saved window view " . string(s:GPGWindowView))
+  if v:version >= 700
+    let s:GPGWindowView = winsaveview()
+    call s:GPGDebug(2, "saved window view " . string(s:GPGWindowView))
+  endi
 
   " store encoding and switch to a safe one
   if &fileencoding != &encoding
@@ -422,8 +424,10 @@ fun s:GPGEncryptPost()
   endi
 
   " restore window view
-  call winrestview(s:GPGWindowView)
-  call s:GPGDebug(2, "restored window view" . string(s:GPGWindowView))
+  if v:version >= 700
+    call winrestview(s:GPGWindowView)
+    call s:GPGDebug(2, "restored window view" . string(s:GPGWindowView))
+  endi
 
   " refresh screen
   redraw!
