@@ -108,7 +108,7 @@ fun s:GPGInit()
 
   " check what gpg command to use
   if (!exists("g:GPGExecutable"))
-    let g:GPGExecutable = "gpg"
+    let g:GPGExecutable = "gpg --trust-model always"
   endif
 
   " check if gpg-agent is allowed
@@ -353,14 +353,56 @@ fun s:GPGEncrypt()
     let option=s:GetField(b:GPGOptions, ":", field)
   endw
 
+  let GPGUnknownRecipients=""
+  let field=0
+  let cur_recipient="-"
+
+  " Check recipientslist for unknown recipients again
+  while(strlen(cur_recipient))
+    let cur_recipient=s:GetField(b:GPGRecipients, ":", field)
+    let field=field+1
+
+    " only do this if the line is not empty
+    if (strlen(cur_recipient) > 0)
+      let gpgid=s:GPGNameToID(cur_recipient)
+      if (strlen(gpgid) <= 0)
+        let GPGUnknownRecipients=GPGUnknownRecipients . cur_recipient . ":"
+        echohl GPGWarning
+        echo "The recipient " . cur_recipient . " is not in your public keyring!"
+        echohl None
+      endi
+    endi
+  endw
+
   " check if there are unknown recipients and warn
-  if (exists("b:GPGUnknownRecipients") && strlen(b:GPGUnknownRecipients) > 0)
+  if(strlen(GPGUnknownRecipients) > 0)
     echohl GPGWarning
     echo "There are unknown recipients!!"
     echo "Please use GPGEditRecipients to correct!!"
     echo
     echohl None
-    call s:GPGDebug(1, "unknown recipients are: " . b:GPGUnknownRecipients)
+    call s:GPGDebug(1, "unknown recipients are: " . GPGUnknownRecipients)
+
+    " Remove unknown recipients from recipientslist
+    let unknown_recipients_field=0
+    let cur_unknown_recipient="-"
+    let known_recipients=b:GPGRecipients
+    while(strlen(cur_unknown_recipient))
+     let cur_unknown_recipient=s:GetField(GPGUnknownRecipients, ":", unknown_recipients_field)
+
+     let match_result=match(known_recipients, cur_unknown_recipient.":")
+     if(match_result > 0 && strlen(cur_unknown_recipient) > 0)
+      echohl GPGWarning
+      echo "Removing ". cur_unknown_recipient ." from recipientlist!\n"
+      echohl None
+      let Known_Recipients=substitute(known_recipients, cur_unknown_recipient .":", "", "g")
+     endi
+
+     let unknown_recipients_field=unknown_recipients_field+1
+    endw
+  " Let user know whats happend and copy known_recipients back to buffer
+  let dummy=input("Press ENTER to quit")
+  let b:GPGRecipients=known_recipients
   endi
 
   " built list of recipients
