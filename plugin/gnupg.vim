@@ -63,6 +63,7 @@
 " - Lars Becker for patch to make gpg2 working.
 " - Thomas Arendsen Hein for patch to convert encoding of gpg output
 " - Karl-Heinz Ruskowski for patch to fix unknown recipients and trust model
+" - Giel van Schijndel for patch to get GPG_TTY dynamically.
 "
 " Section: Plugin header {{{1
 if (exists("g:loaded_gnupg") || &cp || exists("#BufReadPre#*.\(gpg\|asc\|pgp\)"))
@@ -137,11 +138,15 @@ fun s:GPGInit()
 
   " determine if gnupg can use the gpg-agent
   if (exists("$GPG_AGENT_INFO") && g:GPGUseAgent == 1)
-    if (!exists("$GPG_TTY"))
-      echohl GPGError
-      echo "The GPG_TTY is not set!"
-      echo "gpg-agent might not work."
-      echohl None
+    if (!exists("$GPG_TTY") && !has("gui_running"))
+      let $GPG_TTY = system("tty")
+      if (v:shell_error)
+        let $GPG_TTY = ""
+        echohl GPGError
+        echo "The GPG_TTY is not set and no TTY could be found using the `tty` command!"
+        echo "gpg-agent might not work."
+        echohl None
+      endif
     endif
     let s:GPGCommand=g:GPGExecutable . " --use-agent"
   else
