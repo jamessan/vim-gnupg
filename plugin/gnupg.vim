@@ -62,6 +62,7 @@
 "   testing.
 " - Lars Becker for patch to make gpg2 working.
 " - Thomas Arendsen Hein for patch to convert encoding of gpg output
+" - Karl-Heinz Ruskowski for patch to fix unknown recipients and trust model
 "
 " Section: Plugin header {{{1
 if (exists("g:loaded_gnupg") || &cp || exists("#BufReadPre#*.\(gpg\|asc\|pgp\)"))
