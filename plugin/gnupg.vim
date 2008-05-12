@@ -143,8 +143,8 @@ fun s:GPGInit()
       if (v:shell_error)
         let $GPG_TTY = ""
         echohl GPGError
-        echo "The GPG_TTY is not set and no TTY could be found using the `tty` command!"
-        echo "gpg-agent might not work."
+        echom "The GPG_TTY is not set and no TTY could be found using the `tty` command!"
+        echom "gpg-agent might not work."
         echohl None
       endif
     endif
@@ -229,7 +229,7 @@ fun s:GPGDecrypt()
       call s:GPGDebug(1, "cipher-algo is " . cipher)
     else
       echohl GPGWarning
-      echo "The cipher " . cipher . " is not known by the local gpg command. Using default!"
+      echom "The cipher " . cipher . " is not known by the local gpg command. Using default!"
       echo
       echohl None
     endi
@@ -252,7 +252,7 @@ fun s:GPGDecrypt()
       else
         let b:GPGUnknownRecipients=b:GPGUnknownRecipients . recipient . ":" 
         echohl GPGWarning
-        echo "The recipient " . recipient . " is not in your public keyring!"
+        echom "The recipient " . recipient . " is not in your public keyring!"
         echohl None
       end
       let start=match(output, "gpg: public key is [[:xdigit:]]\\{8}", start)
@@ -262,7 +262,7 @@ fun s:GPGDecrypt()
     let b:GPGEncrypted=0
     call s:GPGDebug(1, "this file is not encrypted")
     echohl GPGWarning
-    echo "File is not encrypted, all GPG functions disabled!"
+    echom "File is not encrypted, all GPG functions disabled!"
     echohl None
     set nobin
     return
@@ -330,7 +330,7 @@ fun s:GPGEncrypt()
   " guard for unencrypted files
   if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
     echohl GPGWarning
-    echo "File is not encrypted, all GPG functions disabled!"
+    echom "File is not encrypted, all GPG functions disabled!"
     echohl None
     return
   endi
@@ -374,7 +374,7 @@ fun s:GPGEncrypt()
       if (strlen(gpgid) <= 0)
         let GPGUnknownRecipients=GPGUnknownRecipients . cur_recipient . ":"
         echohl GPGWarning
-        echo "The recipient " . cur_recipient . " is not in your public keyring!"
+        echom "The recipient " . cur_recipient . " is not in your public keyring!"
         echohl None
       endi
     endi
@@ -383,8 +383,8 @@ fun s:GPGEncrypt()
   " check if there are unknown recipients and warn
   if(strlen(GPGUnknownRecipients) > 0)
     echohl GPGWarning
-    echo "There are unknown recipients!!"
-    echo "Please use GPGEditRecipients to correct!!"
+    echom "There are unknown recipients!!"
+    echom "Please use GPGEditRecipients to correct!!"
     echo
     echohl None
     call s:GPGDebug(1, "unknown recipients are: " . GPGUnknownRecipients)
@@ -399,7 +399,7 @@ fun s:GPGEncrypt()
      let match_result=match(known_recipients, cur_unknown_recipient.":")
      if(match_result > 0 && strlen(cur_unknown_recipient) > 0)
       echohl GPGWarning
-      echo "Removing ". cur_unknown_recipient ." from recipientlist!\n"
+      echom "Removing ". cur_unknown_recipient ." from recipientlist!\n"
       echohl None
       let Known_Recipients=substitute(known_recipients, cur_unknown_recipient .":", "", "g")
      endi
@@ -424,8 +424,8 @@ fun s:GPGEncrypt()
   else
     if (match(b:GPGOptions, "encrypt:") >= 0)
       echohl GPGError
-      echo "There are no recipients!!"
-      echo "Please use GPGEditRecipients to correct!!"
+      echom "There are no recipients!!"
+      echom "Please use GPGEditRecipients to correct!!"
       echo
       echohl None
     endi
@@ -489,7 +489,7 @@ fun s:GPGViewRecipients()
   " guard for unencrypted files
   if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
     echohl GPGWarning
-    echo "File is not encrypted, all GPG functions disabled!"
+    echom "File is not encrypted, all GPG functions disabled!"
     echohl None
     return
   endi
@@ -523,7 +523,7 @@ fun s:GPGViewRecipients()
     " check if there is any known recipient
     if (strlen(s:GetField(b:GPGRecipients, ":", 0)) == 0)
       echohl GPGError
-      echo 'There are no known recipients!'
+      echom 'There are no known recipients!'
       echohl None
     endi
   endi
@@ -537,7 +537,7 @@ fun s:GPGEditRecipients()
   " guard for unencrypted files
   if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
     echohl GPGWarning
-    echo "File is not encrypted, all GPG functions disabled!"
+    echom "File is not encrypted, all GPG functions disabled!"
     echohl None
     return
   endi
@@ -648,7 +648,7 @@ fun s:GPGFinishRecipientsBuffer()
   " guard for unencrypted files
   if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
     echohl GPGWarning
-    echo "File is not encrypted, all GPG functions disabled!"
+    echom "File is not encrypted, all GPG functions disabled!"
     echohl None
     return
   endi
@@ -685,7 +685,7 @@ fun s:GPGFinishRecipientsBuffer()
       else
         let GPGUnknownRecipients=GPGUnknownRecipients . recipient . ":"
         echohl GPGWarning
-        echo "The recipient " . recipient . " is not in your public keyring!"
+        echom "The recipient " . recipient . " is not in your public keyring!"
         echohl None
       end
     endi
@@ -704,7 +704,7 @@ fun s:GPGFinishRecipientsBuffer()
   " check if there is any known recipient
   if (strlen(s:GetField(GPGRecipients, ":", 0)) == 0)
     echohl GPGError
-    echo 'There are no known recipients!'
+    echom 'There are no known recipients!'
     echohl None
   endi
 
@@ -720,7 +720,7 @@ fun s:GPGViewOptions()
   " guard for unencrypted files
   if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
     echohl GPGWarning
-    echo "File is not encrypted, all GPG functions disabled!"
+    echom "File is not encrypted, all GPG functions disabled!"
     echohl None
     return
   endi
@@ -747,7 +747,7 @@ fun s:GPGEditOptions()
   " guard for unencrypted files
   if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
     echohl GPGWarning
-    echo "File is not encrypted, all GPG functions disabled!"
+    echom "File is not encrypted, all GPG functions disabled!"
     echohl None
     return
   endi
@@ -837,7 +837,7 @@ fun s:GPGFinishOptionsBuffer()
   " guard for unencrypted files
   if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
     echohl GPGWarning
-    echo "File is not encrypted, all GPG functions disabled!"
+    echom "File is not encrypted, all GPG functions disabled!"
     echohl None
     return
   endi
