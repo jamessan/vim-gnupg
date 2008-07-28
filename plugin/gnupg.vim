@@ -66,9 +66,15 @@
 " - Giel van Schijndel for patch to get GPG_TTY dynamically.
 "
 " Section: Plugin header {{{1
+if v:version < 700
+  echohl ErrorMsg | echo 'plugin gnupg.vim requires Vim version >= 7' | echohl None
+  finish
+endif
+
 if (exists("g:loaded_gnupg") || &cp || exists("#BufReadPre#*.\(gpg\|asc\|pgp\)"))
   finish
 endi
+
 let g:loaded_gnupg = "$Revision$"
 
 " Section: Autocmd setup {{{1
@@ -202,9 +208,9 @@ fun s:GPGDecrypt()
 
   " clear GPGEncrypted, GPGRecipients, GPGUnknownRecipients and GPGOptions
   let b:GPGEncrypted=0
-  let b:GPGRecipients=""
-  let b:GPGUnknownRecipients=""
-  let b:GPGOptions=""
+  let b:GPGRecipients=[]
+  let b:GPGUnknownRecipients=[]
+  let b:GPGOptions=[]
 
   " find the recipients of the file
   let &shellredir=s:shellredir
@@ -221,11 +227,11 @@ fun s:GPGDecrypt()
     let b:GPGEncrypted=1
     call s:GPGDebug(1, "this file is symmetric encrypted")
 
-    let b:GPGOptions=b:GPGOptions . "symmetric:"
+    let b:GPGOptions+=["symmetric"]
 
     let cipher=substitute(output, ".*gpg: \\([^ ]\\+\\) encrypted data.*", "\\1", "")
     if (match(s:GPGCipher, "\\<" . cipher . "\\>") >= 0)
-      let b:GPGOptions=b:GPGOptions . "cipher-algo " . cipher . ":"
+      let b:GPGOptions+=["cipher-algo " . cipher]
       call s:GPGDebug(1, "cipher-algo is " . cipher)
     else
       echohl GPGWarning
@@ -238,7 +244,7 @@ fun s:GPGDecrypt()
     let b:GPGEncrypted=1
     call s:GPGDebug(1, "this file is asymmetric encrypted")
 
-    let b:GPGOptions=b:GPGOptions . "encrypt:"
+    let b:GPGOptions+=["encrypt"]
 
     let start=match(output, "gpg: public key is [[:xdigit:]]\\{8}")
     while (start >= 0)
@@ -247,10 +253,10 @@ fun s:GPGDecrypt()
       call s:GPGDebug(1, "recipient is " . recipient)
       let name=s:GPGNameToID(recipient)
       if (strlen(name) > 0)
-        let b:GPGRecipients=b:GPGRecipients . name . ":" 
+        let b:GPGRecipients+=[name]
         call s:GPGDebug(1, "name of recipient is " . name)
       else
-        let b:GPGUnknownRecipients=b:GPGUnknownRecipients . recipient . ":" 
+        let b:GPGUnknownRecipients+=[recipient]
         echohl GPGWarning
         echom "The recipient " . recipient . " is not in your public keyring!"
         echohl None
@@ -271,7 +277,7 @@ fun s:GPGDecrypt()
   " check if the message is armored
   if (match(output, "gpg: armor header") >= 0)
     call s:GPGDebug(1, "this file is armored")
-    let b:GPGOptions=b:GPGOptions . "armor:"
+    let b:GPGOptions+=["armor"]
   endi
 
   " finally decrypt the buffer content
@@ -309,10 +315,8 @@ endf
 "
 fun s:GPGEncrypt()
   " save window view
-  if v:version >= 700
-    let s:GPGWindowView = winsaveview()
-    call s:GPGDebug(2, "saved window view " . string(s:GPGWindowView))
-  endi
+  let s:GPGWindowView = winsaveview()
+  call s:GPGDebug(2, "saved window view " . string(s:GPGWindowView))
 
   " store encoding and switch to a safe one
   if &fileencoding != &encoding
@@ -340,89 +344,71 @@ fun s:GPGEncrypt()
   let field=0
 
   " built list of options
-  if (!exists("b:GPGOptions") || strlen(b:GPGOptions) == 0)
+  if (!exists("b:GPGOptions") || len(b:GPGOptions) == 0)
+    let b:GPGOptions=[]
     if (exists("g:GPGPreferSymmetric") && g:GPGPreferSymmetric == 1)
-      let b:GPGOptions="symmetric:"
+      let b:GPGOptions+=["symmetric"]
     else
-      let b:GPGOptions="encrypt:"
+      let b:GPGOptions+=["encrypt"]
     endi
     if (exists("g:GPGPreferArmor") && g:GPGPreferArmor == 1)
-      let b:GPGOptions=b:GPGOptions . "armor:"
+      let b:GPGOptions+=["armor"]
     endi
-    call s:GPGDebug(1, "no options set, so using default options: " . b:GPGOptions)
+    call s:GPGDebug(1, "no options set, so using default options: " . string(b:GPGOptions))
   endi
-  let field=0
-  let option=s:GetField(b:GPGOptions, ":", field)
-  while (strlen(option))
+  for option in b:GPGOptions
     let options=options . " --" . option . " "
-    let field=field+1
-    let option=s:GetField(b:GPGOptions, ":", field)
-  endw
+  endfor
 
-  let GPGUnknownRecipients=""
-  let field=0
-  let cur_recipient="-"
+  let GPGUnknownRecipients=[]
 
   " Check recipientslist for unknown recipients again
-  while(strlen(cur_recipient))
-    let cur_recipient=s:GetField(b:GPGRecipients, ":", field)
-    let field=field+1
-
+  for cur_recipient in b:GPGRecipients
     " only do this if the line is not empty
     if (strlen(cur_recipient) > 0)
       let gpgid=s:GPGNameToID(cur_recipient)
       if (strlen(gpgid) <= 0)
-        let GPGUnknownRecipients=GPGUnknownRecipients . cur_recipient . ":"
+        let GPGUnknownRecipients+=[cur_recipient]
         echohl GPGWarning
         echom "The recipient " . cur_recipient . " is not in your public keyring!"
         echohl None
       endi
     endi
-  endw
+  endfor
 
   " check if there are unknown recipients and warn
-  if(strlen(GPGUnknownRecipients) > 0)
+  if(len(GPGUnknownRecipients) > 0)
     echohl GPGWarning
     echom "There are unknown recipients!!"
     echom "Please use GPGEditRecipients to correct!!"
     echo
     echohl None
-    call s:GPGDebug(1, "unknown recipients are: " . GPGUnknownRecipients)
+    call s:GPGDebug(1, "unknown recipients are: " . join(GPGUnknownRecipients, " "))
 
     " Remove unknown recipients from recipientslist
-    let unknown_recipients_field=0
-    let cur_unknown_recipient="-"
-    let known_recipients=b:GPGRecipients
-    while(strlen(cur_unknown_recipient))
-     let cur_unknown_recipient=s:GetField(GPGUnknownRecipients, ":", unknown_recipients_field)
-
-     let match_result=match(known_recipients, cur_unknown_recipient.":")
-     if(match_result > 0 && strlen(cur_unknown_recipient) > 0)
-      echohl GPGWarning
-      echom "Removing ". cur_unknown_recipient ." from recipientlist!\n"
-      echohl None
-      let Known_Recipients=substitute(known_recipients, cur_unknown_recipient .":", "", "g")
-     endi
-
-     let unknown_recipients_field=unknown_recipients_field+1
+    let unknown_recipients=join(GPGUnknownRecipients, " ")
+    let index=0
+    while index < len(b:GPGRecipients)
+      if match(unknown_recipients, b:GPGRecipients[index])
+        echohl GPGWarning
+        echom "Removing ". b:GPGRecipients[index] ." from recipientlist!\n"
+        echohl None
+        call remove(b:GPGRecipients, index)
+      endi
     endw
-  " Let user know whats happend and copy known_recipients back to buffer
-  let dummy=input("Press ENTER to quit")
-  let b:GPGRecipients=known_recipients
+
+    " Let user know whats happend and copy known_recipients back to buffer
+    let dummy=input("Press ENTER to quit")
   endi
 
   " built list of recipients
-  if (exists("b:GPGRecipients") && strlen(b:GPGRecipients) > 0)
-    call s:GPGDebug(1, "recipients are: " . b:GPGRecipients)
-    let field=0
-    let gpgid=s:GetField(b:GPGRecipients, ":", field)
-    while (strlen(gpgid))
+  if (exists("b:GPGRecipients") && len(b:GPGRecipients) > 0)
+    call s:GPGDebug(1, "recipients are: " . join(b:GPGRecipients, " "))
+    for gpgid in b:GPGRecipients
       let recipients=recipients . " -r " . gpgid
-      let field=field+1
-      let gpgid=s:GetField(b:GPGRecipients, ":", field)
-    endw
+    endfor
   else
-    if (match(b:GPGOptions, "encrypt:") >= 0)
+    if (match(join(b:GPGOptions, " "), "encrypt") >= 0)
       echohl GPGError
       echom "There are no recipients!!"
       echom "Please use GPGEditRecipients to correct!!"
@@ -472,10 +458,8 @@ fun s:GPGEncryptPost()
   endi
 
   " restore window view
-  if v:version >= 700
-    call winrestview(s:GPGWindowView)
-    call s:GPGDebug(2, "restored window view" . string(s:GPGWindowView))
-  endi
+  call winrestview(s:GPGWindowView)
+  call s:GPGDebug(2, "restored window view" . string(s:GPGWindowView))
 
   " refresh screen
   redraw!
@@ -497,31 +481,21 @@ fun s:GPGViewRecipients()
   if (exists("b:GPGRecipients"))
     echo 'This file has following recipients (Unknown recipients have a prepended "!"):'
     " echo the recipients
-    let field=0
-    let name=s:GetField(b:GPGRecipients, ":", field)
-    while (strlen(name) > 0)
+    for name in b:GPGRecipients
       let name=s:GPGIDToName(name)
       echo name
-
-      let field=field+1
-      let name=s:GetField(b:GPGRecipients, ":", field)
-    endw
+    endfor
 
     " put the unknown recipients in the scratch buffer
-    let field=0
     echohl GPGWarning
-    let name=s:GetField(b:GPGUnknownRecipients, ":", field)
-    while (strlen(name) > 0)
+    for name in b:GPGUnknownRecipients
       let name="!" . name
       echo name
-
-      let field=field+1
-      let name=s:GetField(b:GPGUnknownRecipients, ":", field)
-    endw
+    endfor
     echohl None
 
     " check if there is any known recipient
-    if (strlen(s:GetField(b:GPGRecipients, ":", 0)) == 0)
+    if (len(b:GPGRecipients) == 0)
       echohl GPGError
       echom 'There are no known recipients!'
       echohl None
@@ -593,31 +567,20 @@ fun s:GPGEditRecipients()
 
     " put the recipients in the scratch buffer
     let recipients=getbufvar(b:corresponding_to, "GPGRecipients")
-    let field=0
 
-    let name=s:GetField(recipients, ":", field)
-    while (strlen(name) > 0)
+    for name in recipients
       let name=s:GPGIDToName(name)
       silent put =name
-
-      let field=field+1
-      let name=s:GetField(recipients, ":", field)
-    endw
+    endfor
 
     " put the unknown recipients in the scratch buffer
     let unknownRecipients=getbufvar(b:corresponding_to, "GPGUnknownRecipients")
-    let field=0
     let syntaxPattern="\\(nonexistingwordinthisbuffer"
-
-    let name=s:GetField(unknownRecipients, ":", field)
-    while (strlen(name) > 0)
+    for name in unknownRecipients
       let name="!" . name
       let syntaxPattern=syntaxPattern . "\\|" . name
       silent put =name
-
-      let field=field+1
-      let name=s:GetField(unknownRecipients, ":", field)
-    endw
+    endfor
 
     let syntaxPattern=syntaxPattern . "\\)"
 
@@ -660,8 +623,8 @@ fun s:GPGFinishRecipientsBuffer()
   endi
 
   " clear GPGRecipients and GPGUnknownRecipients
-  let GPGRecipients=""
-  let GPGUnknownRecipients=""
+  let GPGRecipients=[]
+  let GPGUnknownRecipients=[]
 
   " delete the autocommand
   autocmd! * <buffer>
@@ -681,9 +644,9 @@ fun s:GPGFinishRecipientsBuffer()
     if (strlen(recipient) > 0)
       let gpgid=s:GPGNameToID(recipient)
       if (strlen(gpgid) > 0)
-        let GPGRecipients=GPGRecipients . gpgid . ":" 
+        let GPGRecipients+=[gpgid]
       else
-        let GPGUnknownRecipients=GPGUnknownRecipients . recipient . ":"
+        let GPGUnknownRecipients+=[recipient]
         echohl GPGWarning
         echom "The recipient " . recipient . " is not in your public keyring!"
         echohl None
@@ -702,7 +665,7 @@ fun s:GPGFinishRecipientsBuffer()
   call setbufvar(b:corresponding_to, "GPGEncrypted", 1)
 
   " check if there is any known recipient
-  if (strlen(s:GetField(GPGRecipients, ":", 0)) == 0)
+  if (len(GPGRecipients) == 0)
     echohl GPGError
     echom 'There are no known recipients!'
     echohl None
@@ -728,14 +691,9 @@ fun s:GPGViewOptions()
   if (exists("b:GPGOptions"))
     echo 'This file has following options:'
     " echo the options
-    let field=0
-    let option=s:GetField(b:GPGOptions, ":", field)
-    while (strlen(option) > 0)
+    for option in b:GPGOptions
       echo option
-
-      let field=field+1
-      let option=s:GetField(b:GPGOptions, ":", field)
-    endw
+    endfor
   endi
 endf
 
@@ -805,15 +763,10 @@ fun s:GPGEditOptions()
 
     " put the options in the scratch buffer
     let options=getbufvar(b:corresponding_to, "GPGOptions")
-    let field=0
 
-    let option=s:GetField(options, ":", field)
-    while (strlen(option) > 0)
+    for option in options
       silent put =option
-
-      let field=field+1
-      let option=s:GetField(options, ":", field)
-    endw
+    endfor
 
     " delete the empty first line
     silent normal! 1Gdd
@@ -849,8 +802,8 @@ fun s:GPGFinishOptionsBuffer()
   endi
 
   " clear GPGOptions and GPGUnknownOptions
-  let GPGOptions=""
-  let GPGUnknownOptions=""
+  let GPGOptions=[]
+  let GPGUnknownOptions=[]
 
   " delete the autocommand
   autocmd! * <buffer>
@@ -868,7 +821,7 @@ fun s:GPGFinishOptionsBuffer()
 
     " only do this if the line is not empty
     if (strlen(option) > 0)
-      let GPGOptions=GPGOptions . option . ":" 
+      let GPGOptions+=[option]
     endi
 
     let currentline=currentline+1
@@ -901,25 +854,25 @@ fun s:GPGNameToID(name)
   if &encoding != "utf-8"
     let output=iconv(output, "utf-8", &encoding)
   endi
+  let lines=split(output, "\n")
 
   " parse the output of gpg
   let pub_seen=0
   let uid_seen=0
-  let line=0
   let counter=0
-  let gpgids=""
+  let gpgids=[]
   let choices="The name \"" . a:name . "\" is ambiguous. Please select the correct key:\n"
-  let linecontent=s:GetField(output, "\n", line)
-  while (strlen(linecontent))
+  for line in lines
+    let fields=split(line, ":")
     " search for the next uid
     if (pub_seen == 1)
-      if (s:GetField(linecontent, ":", 0) == "uid")
+      if (fields[0] == "uid")
         if (uid_seen == 0)
-          let choices=choices . counter . ": " . s:GetField(linecontent, ":", 9) . "\n"
+          let choices=choices . counter . ": " . fields[9] . "\n"
           let counter=counter+1
           let uid_seen=1
         else
-          let choices=choices . "   " . s:GetField(linecontent, ":", 9) . "\n"
+          let choices=choices . "   " . fields[9] . "\n"
         endi
       else
         let uid_seen=0
@@ -929,15 +882,13 @@ fun s:GPGNameToID(name)
 
     " search for the next pub
     if (pub_seen == 0)
-      if (s:GetField(linecontent, ":", 0) == "pub")
-        let gpgids=gpgids . s:GetField(linecontent, ":", 4) . ":"
+      if (fields[0] == "pub")
+        let gpgids+=[fields[4]]
         let pub_seen=1
       endi
     endi
 
-    let line=line+1
-    let linecontent=s:GetField(output, "\n", line)
-  endw
+  endfor
 
   " counter > 1 means we have more than one results
   let answer=0
@@ -949,7 +900,7 @@ fun s:GPGNameToID(name)
     endw
   endi
 
-  return s:GetField(gpgids, ":", answer)
+  return get(gpgids, answer, "")
 endf
 
 " Function: s:GPGIDToName(identity) {{{2
@@ -971,61 +922,27 @@ fun s:GPGIDToName(identity)
   if &encoding != "utf-8"
     let output=iconv(output, "utf-8", &encoding)
   endi
+  let lines=split(output, "\n")
 
   " parse the output of gpg
   let pub_seen=0
-  let finish=0
-  let line=0
-  let linecontent=s:GetField(output, "\n", line)
-  while (strlen(linecontent) && !finish)
+  let uid=""
+  for line in lines
+    let fields=split(line, ":")
     if (pub_seen == 0) " search for the next pub
-      if (s:GetField(linecontent, ":", 0) == "pub")
+      if (fields[0] == "pub")
         let pub_seen=1
       endi
     else " search for the next uid
-      if (s:GetField(linecontent, ":", 0) == "uid")
+      if (fields[0] == "uid")
         let pub_seen=0
-        let finish=1
-        let uid=s:GetField(linecontent, ":", 9)
+        let uid=fields[9]
+        break
       endi
     endi
-
-    let line=line+1
-    let linecontent=s:GetField(output, "\n", line)
-  endw
+  endfor
 
   return uid
-endf
-
-" Function: s:GetField(line, separator, field) {{{2
-"
-" find field of 'separator' separated string, counting starts with 0
-" Returns: content of the field, if field doesn't exist it returns an empty
-"          string
-fun s:GetField(line, separator, field)
-  let counter=a:field
-  let separatorLength=strlen(a:separator)
-  let start=0
-  let end=match(a:line, a:separator)
-  if (end < 0)
-    let end=strlen(a:line)
-  endi
-
-  " search for requested field
-  while (start < strlen(a:line) && counter > 0)
-    let counter=counter-separatorLength
-    let start=end+separatorLength
-    let end=match(a:line, a:separator, start)
-    if (end < 0)
-      let end=strlen(a:line)
-    endi
-  endw
-
-  if (start < strlen(a:line))
-    return strpart(a:line, start, end-start)
-  else
-    return ""
-  endi
 endf
 
 " Function: s:GPGDebug(level, text) {{{2
