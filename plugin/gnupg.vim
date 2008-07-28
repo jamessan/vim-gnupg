@@ -73,7 +73,7 @@ endif
 
 if (exists("g:loaded_gnupg") || &cp || exists("#BufReadPre#*.\(gpg\|asc\|pgp\)"))
   finish
-endi
+endif
 
 let g:loaded_gnupg = "$Revision$"
 
@@ -85,7 +85,7 @@ augroup GnuPG
   autocmd BufNewFile,BufReadPre,FileReadPre      *.\(gpg\|asc\|pgp\) call s:GPGInit()
   " force the user to edit the recipient list if he opens a new file and public
   " keys are preferred
-  autocmd BufNewFile                             *.\(gpg\|asc\|pgp\) if (exists("g:GPGPreferSymmetric") && g:GPGPreferSymmetric == 0) | call s:GPGEditRecipients() | endi
+  autocmd BufNewFile                             *.\(gpg\|asc\|pgp\) if (exists("g:GPGPreferSymmetric") && g:GPGPreferSymmetric == 0) | call s:GPGEditRecipients() | endif
   " do the decryption
   autocmd BufReadPost,FileReadPost               *.\(gpg\|asc\|pgp\) call s:GPGDecrypt()
 
@@ -106,7 +106,7 @@ highlight default link GPGHighlightUnknownRecipient ErrorMsg
 "
 " initialize the plugin
 "
-fun s:GPGInit()
+function s:GPGInit()
   " first make sure nothing is written to ~/.viminfo while editing
   " an encrypted file.
   set viminfo=
@@ -180,7 +180,7 @@ fun s:GPGInit()
     let s:shell = 'sh'
     let s:stderrredirnull ='2>/dev/null'
     let s:GPGCommand="LANG=C LC_ALL=C " . s:GPGCommand
-  endi
+  endif
 
   " find the supported algorithms
   let &shellredir=s:shellredir
@@ -193,13 +193,13 @@ fun s:GPGInit()
   let s:GPGCipher=substitute(output, ".*Cipher: \\(.\\{-}\\)\n.*", "\\1", "")
   let s:GPGHash=substitute(output, ".*Hash: \\(.\\{-}\\)\n.*", "\\1", "")
   let s:GPGCompress=substitute(output, ".*Compress: \\(.\\{-}\\)\n.*", "\\1", "")
-endf
+endfunction
 
 " Function: s:GPGDecrypt() {{{2
 "
 " decrypt the buffer and find all recipients of the encrypted file
 "
-fun s:GPGDecrypt()
+function s:GPGDecrypt()
   " switch to binary mode to read the encrypted file
   set bin
 
@@ -238,7 +238,7 @@ fun s:GPGDecrypt()
       echom "The cipher " . cipher . " is not known by the local gpg command. Using default!"
       echo
       echohl None
-    endi
+    endif
   elseif (match(output, "gpg: public key is [[:xdigit:]]\\{8}") >= 0)
     " file is asymmetric encrypted
     let b:GPGEncrypted=1
@@ -262,7 +262,7 @@ fun s:GPGDecrypt()
         echohl None
       end
       let start=match(output, "gpg: public key is [[:xdigit:]]\\{8}", start)
-    endw
+    endwhile
   else
     " file is not encrypted
     let b:GPGEncrypted=0
@@ -272,13 +272,13 @@ fun s:GPGDecrypt()
     echohl None
     set nobin
     return
-  endi
+  endif
 
   " check if the message is armored
   if (match(output, "gpg: armor header") >= 0)
     call s:GPGDebug(1, "this file is armored")
     let b:GPGOptions+=["armor"]
-  endi
+  endif
 
   " finally decrypt the buffer content
   " since even with the --quiet option passphrase typos will be reported,
@@ -296,7 +296,7 @@ fun s:GPGDecrypt()
     bwipeout
     set nobin
     return
-  endi
+  endif
 
   " turn off binary mode
   set nobin
@@ -307,13 +307,13 @@ fun s:GPGDecrypt()
 
   " refresh screen
   redraw!
-endf
+endfunction
 
 " Function: s:GPGEncrypt() {{{2
 "
 " encrypts the buffer to all previous recipients
 "
-fun s:GPGEncrypt()
+function s:GPGEncrypt()
   " save window view
   let s:GPGWindowView = winsaveview()
   call s:GPGDebug(2, "saved window view " . string(s:GPGWindowView))
@@ -326,7 +326,7 @@ fun s:GPGEncrypt()
   else
     let s:GPGEncoding = ""
     call s:GPGDebug(2, "encoding and fileencoding are the same (\"" . &encoding . "\"), not switching")
-  endi
+  endif
 
   " switch buffer to binary mode
   set bin
@@ -337,7 +337,7 @@ fun s:GPGEncrypt()
     echom "File is not encrypted, all GPG functions disabled!"
     echohl None
     return
-  endi
+  endif
 
   let options=""
   let recipients=""
@@ -350,12 +350,12 @@ fun s:GPGEncrypt()
       let b:GPGOptions+=["symmetric"]
     else
       let b:GPGOptions+=["encrypt"]
-    endi
+    endif
     if (exists("g:GPGPreferArmor") && g:GPGPreferArmor == 1)
       let b:GPGOptions+=["armor"]
-    endi
+    endif
     call s:GPGDebug(1, "no options set, so using default options: " . string(b:GPGOptions))
-  endi
+  endif
   for option in b:GPGOptions
     let options=options . " --" . option . " "
   endfor
@@ -372,8 +372,8 @@ fun s:GPGEncrypt()
         echohl GPGWarning
         echom "The recipient " . cur_recipient . " is not in your public keyring!"
         echohl None
-      endi
-    endi
+      endif
+    endif
   endfor
 
   " check if there are unknown recipients and warn
@@ -394,12 +394,12 @@ fun s:GPGEncrypt()
         echom "Removing ". b:GPGRecipients[index] ." from recipientlist!\n"
         echohl None
         call remove(b:GPGRecipients, index)
-      endi
-    endw
+      endif
+    endwhile
 
     " Let user know whats happend and copy known_recipients back to buffer
     let dummy=input("Press ENTER to quit")
-  endi
+  endif
 
   " built list of recipients
   if (exists("b:GPGRecipients") && len(b:GPGRecipients) > 0)
@@ -414,8 +414,8 @@ fun s:GPGEncrypt()
       echom "Please use GPGEditRecipients to correct!!"
       echo
       echohl None
-    endi
-  endi
+    endif
+  endif
 
   " encrypt the buffer
   let &shellredir=s:shellredir
@@ -431,19 +431,19 @@ fun s:GPGEncrypt()
     echohl None
     bwipeout
     return
-  endi
+  endif
 
-endf
+endfunction
 
 " Function: s:GPGEncryptPost() {{{2
 "
 " undo changes don by encrypt, after writing
 "
-fun s:GPGEncryptPost()
+function s:GPGEncryptPost()
 
   if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
     return
-  endi
+  endif
 
   " undo encryption of buffer content
   silent u
@@ -455,7 +455,7 @@ fun s:GPGEncryptPost()
   if s:GPGEncoding != ""
     let &encoding = s:GPGEncoding
     call s:GPGDebug(2, "restored encoding \"" . &encoding . "\"")
-  endi
+  endif
 
   " restore window view
   call winrestview(s:GPGWindowView)
@@ -463,20 +463,20 @@ fun s:GPGEncryptPost()
 
   " refresh screen
   redraw!
-endf
+endfunction
 
 " Function: s:GPGViewRecipients() {{{2
 "
 " echo the recipients
 "
-fun s:GPGViewRecipients()
+function s:GPGViewRecipients()
   " guard for unencrypted files
   if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
     echohl GPGWarning
     echom "File is not encrypted, all GPG functions disabled!"
     echohl None
     return
-  endi
+  endif
 
   if (exists("b:GPGRecipients"))
     echo 'This file has following recipients (Unknown recipients have a prepended "!"):'
@@ -499,22 +499,22 @@ fun s:GPGViewRecipients()
       echohl GPGError
       echom 'There are no known recipients!'
       echohl None
-    endi
-  endi
-endf
+    endif
+  endif
+endfunction
 
 " Function: s:GPGEditRecipients() {{{2
 "
 " create a scratch buffer with all recipients to add/remove recipients
 "
-fun s:GPGEditRecipients()
+function s:GPGEditRecipients()
   " guard for unencrypted files
   if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
     echohl GPGWarning
     echom "File is not encrypted, all GPG functions disabled!"
     echohl None
     return
-  endi
+  endif
 
   " only do this if it isn't already a GPGRecipients_* buffer
   if (match(bufname("%"), "^\\(GPGRecipients_\\|GPGOptions_\\)") != 0 && match(bufname("%"), "\.\\(gpg\\|asc\\|pgp\\)$") >= 0)
@@ -540,11 +540,11 @@ fun s:GPGEditRecipients()
 
         " add a autocommand to regenerate the recipients after a write
         autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishRecipientsBuffer()
-      endi
+      endif
 
       " empty the buffer
       silent normal! 1GdG
-    endi
+    endif
 
     " Mark the buffer as a scratch buffer
     setlocal buftype=acwrite
@@ -593,7 +593,7 @@ fun s:GPGEditRecipients()
       syntax match GPGComment "^GPG:.*$"
       highlight clear GPGComment
       highlight link GPGComment Comment
-    endi
+    endif
 
     " delete the empty first line
     silent normal! 1Gdd
@@ -601,26 +601,26 @@ fun s:GPGEditRecipients()
     " jump to the first recipient
     silent normal! G
 
-  endi
-endf
+  endif
+endfunction
 
 " Function: s:GPGFinishRecipientsBuffer() {{{2
 "
 " create a new recipient list from RecipientsBuffer
-fun s:GPGFinishRecipientsBuffer()
+function s:GPGFinishRecipientsBuffer()
   " guard for unencrypted files
   if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
     echohl GPGWarning
     echom "File is not encrypted, all GPG functions disabled!"
     echohl None
     return
-  endi
+  endif
 
   " go to buffer before doing work
   if (bufnr("%") != expand("<abuf>"))
     " switch to scratch buffer window
     exe 'silent! ' . bufwinnr(expand("<afile>")) . "wincmd w"
-  endi
+  endif
 
   " clear GPGRecipients and GPGUnknownRecipients
   let GPGRecipients=[]
@@ -646,20 +646,20 @@ fun s:GPGFinishRecipientsBuffer()
       if (strlen(gpgid) > 0)
         if (match(GPGRecipients, gpgid) < 0)
           let GPGRecipients+=[gpgid]
-        endi
+        endif
       else
         if (match(GPGUnknownRecipients, recipient) < 0)
           let GPGUnknownRecipients+=[recipient]
           echohl GPGWarning
           echom "The recipient " . recipient . " is not in your public keyring!"
           echohl None
-        endi
+        endif
       end
-    endi
+    endif
 
     let currentline=currentline+1
     let recipient=getline(currentline)
-  endw
+  endwhile
 
   " write back the new recipient list to the corresponding buffer and mark it
   " as modified. Buffer is now for sure a encrypted buffer.
@@ -673,24 +673,24 @@ fun s:GPGFinishRecipientsBuffer()
     echohl GPGError
     echom 'There are no known recipients!'
     echohl None
-  endi
+  endif
 
   " reset modified flag
   set nomodified
-endf
+endfunction
 
 " Function: s:GPGViewOptions() {{{2
 "
 " echo the recipients
 "
-fun s:GPGViewOptions()
+function s:GPGViewOptions()
   " guard for unencrypted files
   if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
     echohl GPGWarning
     echom "File is not encrypted, all GPG functions disabled!"
     echohl None
     return
-  endi
+  endif
 
   if (exists("b:GPGOptions"))
     echo 'This file has following options:'
@@ -698,21 +698,21 @@ fun s:GPGViewOptions()
     for option in b:GPGOptions
       echo option
     endfor
-  endi
-endf
+  endif
+endfunction
 
 " Function: s:GPGEditOptions() {{{2
 "
 " create a scratch buffer with all recipients to add/remove recipients
 "
-fun s:GPGEditOptions()
+function s:GPGEditOptions()
   " guard for unencrypted files
   if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
     echohl GPGWarning
     echom "File is not encrypted, all GPG functions disabled!"
     echohl None
     return
-  endi
+  endif
 
   " only do this if it isn't already a GPGOptions_* buffer
   if (match(bufname("%"), "^\\(GPGRecipients_\\|GPGOptions_\\)") != 0 && match(bufname("%"), "\.\\(gpg\\|asc\\|pgp\\)$") >= 0)
@@ -738,11 +738,11 @@ fun s:GPGEditOptions()
 
         " add a autocommand to regenerate the options after a write
         autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishOptionsBuffer()
-      endi
+      endif
 
       " empty the buffer
       silent normal! 1GdG
-    endi
+    endif
 
     " Mark the buffer as a scratch buffer
     setlocal buftype=nofile
@@ -783,27 +783,27 @@ fun s:GPGEditOptions()
       syntax match GPGComment "^GPG:.*$"
       highlight clear GPGComment
       highlight link GPGComment Comment
-    endi
-  endi
-endf
+    endif
+  endif
+endfunction
 
 " Function: s:GPGFinishOptionsBuffer() {{{2
 "
 " create a new option list from OptionsBuffer
-fun s:GPGFinishOptionsBuffer()
+function s:GPGFinishOptionsBuffer()
   " guard for unencrypted files
   if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
     echohl GPGWarning
     echom "File is not encrypted, all GPG functions disabled!"
     echohl None
     return
-  endi
+  endif
 
   " go to buffer before doing work
   if (bufnr("%") != expand("<abuf>"))
     " switch to scratch buffer window
     exe 'silent! ' . bufwinnr(expand("<afile>")) . "wincmd w"
-  endi
+  endif
 
   " clear GPGOptions and GPGUnknownOptions
   let GPGOptions=[]
@@ -826,11 +826,11 @@ fun s:GPGFinishOptionsBuffer()
     " only do this if the line is not empty
     if (strlen(option) > 0 && match(GPGOptions, option) < 0)
       let GPGOptions+=[option]
-    endi
+    endif
 
     let currentline=currentline+1
     let option=getline(currentline)
-  endw
+  endwhile
 
   " write back the new option list to the corresponding buffer and mark it
   " as modified
@@ -839,13 +839,13 @@ fun s:GPGFinishOptionsBuffer()
 
   " reset modified flag
   set nomodified
-endf
+endfunction
 
 " Function: s:GPGNameToID(name) {{{2
 "
 " find GPG key ID corresponding to a name
 " Returns: ID for the given name
-fun s:GPGNameToID(name)
+function s:GPGNameToID(name)
   " ask gpg for the id for a name
   let &shellredir=s:shellredir
   let &shell=s:shell
@@ -857,7 +857,7 @@ fun s:GPGNameToID(name)
   " so convert it, if necessary
   if &encoding != "utf-8"
     let output=iconv(output, "utf-8", &encoding)
-  endi
+  endif
   let lines=split(output, "\n")
 
   " parse the output of gpg
@@ -877,20 +877,20 @@ fun s:GPGNameToID(name)
           let uid_seen=1
         else
           let choices=choices . "   " . fields[9] . "\n"
-        endi
+        endif
       else
         let uid_seen=0
         let pub_seen=0
-      endi
-    endi
+      endif
+    endif
 
     " search for the next pub
     if (pub_seen == 0)
       if (fields[0] == "pub")
         let gpgids+=[fields[4]]
         let pub_seen=1
-      endi
-    endi
+      endif
+    endif
 
   endfor
 
@@ -901,17 +901,17 @@ fun s:GPGNameToID(name)
     let answer=input(choices, "0")
     while (answer == "")
       let answer=input("Enter number: ", "0")
-    endw
-  endi
+    endwhile
+  endif
 
   return get(gpgids, answer, "")
-endf
+endfunction
 
 " Function: s:GPGIDToName(identity) {{{2
 "
 " find name corresponding to a GPG key ID
 " Returns: Name for the given ID
-fun s:GPGIDToName(identity)
+function s:GPGIDToName(identity)
   " TODO is the encryption subkey really unique?
 
   " ask gpg for the id for a name
@@ -925,7 +925,7 @@ fun s:GPGIDToName(identity)
   " so convert it, if necessary
   if &encoding != "utf-8"
     let output=iconv(output, "utf-8", &encoding)
-  endi
+  endif
   let lines=split(output, "\n")
 
   " parse the output of gpg
@@ -936,32 +936,32 @@ fun s:GPGIDToName(identity)
     if (pub_seen == 0) " search for the next pub
       if (fields[0] == "pub")
         let pub_seen=1
-      endi
+      endif
     else " search for the next uid
       if (fields[0] == "uid")
         let pub_seen=0
         let uid=fields[9]
         break
-      endi
-    endi
+      endif
+    endif
   endfor
 
   return uid
-endf
+endfunction
 
 " Function: s:GPGDebug(level, text) {{{2
 "
 " output debug message, if this message has high enough importance
-fun s:GPGDebug(level, text)
+function s:GPGDebug(level, text)
   if (g:GPGDebugLevel >= a:level)
     echom a:text
-  endi
-endf
+  endif
+endfunction
 
 " Section: Command definitions {{{1
-com! GPGViewRecipients call s:GPGViewRecipients()
-com! GPGEditRecipients call s:GPGEditRecipients()
-com! GPGViewOptions call s:GPGViewOptions()
-com! GPGEditOptions call s:GPGEditOptions()
+command! GPGViewRecipients call s:GPGViewRecipients()
+command! GPGEditRecipients call s:GPGEditRecipients()
+command! GPGViewOptions call s:GPGViewOptions()
+command! GPGEditOptions call s:GPGEditOptions()
 
 " vim600: foldmethod=marker:foldlevel=0
