@@ -612,18 +612,17 @@ function s:GPGFinishRecipientsBuffer()
   " delete the autocommand
   autocmd! * <buffer>
 
-  let currentline=1
-  let recipient=getline(currentline)
 
   " get the recipients from the scratch buffer
   let recipients=[]
   let unknownrecipients=[]
-  while (currentline <= line("$"))
+  let lines=getline(1,"$")
+  for line in lines
     " delete all spaces at beginning and end of the line
     " also delete a '!' at the beginning of the line
-    let recipient=substitute(recipient, "^[[:space:]!]*\\(.\\{-}\\)[[:space:]]*$", "\\1", "")
+    let recipient=substitute(line, "^[[:space:]!]*\\(.\\{-}\\)[[:space:]]*$", "\\1", "")
     " delete comment lines
-    let recipient=substitute(recipient, "^GPG:.*$", "", "")
+    let recipient=substitute(line, "^GPG:.*$", "", "")
 
     " only do this if the line is not empty
     if (strlen(recipient) > 0)
@@ -641,10 +640,7 @@ function s:GPGFinishRecipientsBuffer()
         endif
       end
     endif
-
-    let currentline=currentline+1
-    let recipient=getline(currentline)
-  endwhile
+  endfor
 
   " write back the new recipient list to the corresponding buffer and mark it
   " as modified. Buffer is now for sure a encrypted buffer.
@@ -797,25 +793,20 @@ function s:GPGFinishOptionsBuffer()
   " delete the autocommand
   autocmd! * <buffer>
 
-  let currentline=1
-  let option=getline(currentline)
-
   " get the options from the scratch buffer
-  while (currentline <= line("$"))
+  let lines=getline(1, "$")
+  for line in lines
     " delete all spaces at beginning and end of the line
     " also delete a '!' at the beginning of the line
-    let option=substitute(option, "^[[:space:]!]*\\(.\\{-}\\)[[:space:]]*$", "\\1", "")
+    let option=substitute(line, "^[[:space:]!]*\\(.\\{-}\\)[[:space:]]*$", "\\1", "")
     " delete comment lines
-    let option=substitute(option, "^GPG:.*$", "", "")
+    let option=substitute(line, "^GPG:.*$", "", "")
 
     " only do this if the line is not empty
     if (strlen(option) > 0 && match(options, option) < 0)
       let options+=[option]
     endif
-
-    let currentline=currentline+1
-    let option=getline(currentline)
-  endwhile
+  endfor
 
   " write back the new option list to the corresponding buffer and mark it
   " as modified
