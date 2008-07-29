@@ -617,12 +617,12 @@ function s:GPGFinishRecipientsBuffer()
   let recipients=[]
   let unknownrecipients=[]
   let lines=getline(1,"$")
-  for line in lines
-    " delete all spaces at beginning and end of the line
-    " also delete a '!' at the beginning of the line
-    let recipient=substitute(line, "^[[:space:]!]*\\(.\\{-}\\)[[:space:]]*$", "\\1", "")
+  for recipient in lines
+    " delete all spaces at beginning and end of the recipient
+    " also delete a '!' at the beginning of the recipient
+    let recipient=substitute(recipient, "^[[:space:]!]*\\(.\\{-}\\)[[:space:]]*$", "\\1", "")
     " delete comment lines
-    let recipient=substitute(line, "^GPG:.*$", "", "")
+    let recipient=substitute(recipient, "^GPG:.*$", "", "")
 
     " only do this if the line is not empty
     if (strlen(recipient) > 0)
@@ -795,12 +795,12 @@ function s:GPGFinishOptionsBuffer()
 
   " get the options from the scratch buffer
   let lines=getline(1, "$")
-  for line in lines
-    " delete all spaces at beginning and end of the line
-    " also delete a '!' at the beginning of the line
-    let option=substitute(line, "^[[:space:]!]*\\(.\\{-}\\)[[:space:]]*$", "\\1", "")
+  for option in lines
+    " delete all spaces at beginning and end of the option
+    " also delete a '!' at the beginning of the option
+    let option=substitute(option, "^[[:space:]!]*\\(.\\{-}\\)[[:space:]]*$", "\\1", "")
     " delete comment lines
-    let option=substitute(line, "^GPG:.*$", "", "")
+    let option=substitute(option, "^GPG:.*$", "", "")
 
     " only do this if the line is not empty
     if (strlen(option) > 0 && match(options, option) < 0)
