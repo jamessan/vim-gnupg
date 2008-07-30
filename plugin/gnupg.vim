@@ -206,10 +206,9 @@ function s:GPGDecrypt()
   " get the filename of the current buffer
   let filename=escape(expand("%:p"), '\"')
 
-  " clear GPGEncrypted, GPGRecipients, GPGUnknownRecipients and GPGOptions
+  " clear GPGEncrypted, GPGRecipients and GPGOptions
   let b:GPGEncrypted=0
   let b:GPGRecipients=[]
-  let b:GPGUnknownRecipients=[]
   let b:GPGOptions=[]
 
   " find the recipients of the file
@@ -258,7 +257,7 @@ function s:GPGDecrypt()
         let b:GPGRecipients+=[name]
         call s:GPGDebug(1, "name of recipient is " . name)
       else
-        let b:GPGUnknownRecipients+=[recipient]
+        let b:GPGRecipients+=[recipient]
         echohl GPGWarning
         echom "The recipient \"" . recipient . "\" is not in your public keyring!"
         echohl None
@@ -362,37 +361,10 @@ function s:GPGEncrypt()
   endfor
 
   " check here again if all recipients are available in the keyring
-  let recipients = []
-  if (exists("b:GPGRecipients") && type(b:GPGRecipients) == type([]))
-    let recipients += b:GPGRecipients
-  else
-    unlet b:GPGRecipients
-  endif
-  if (exists("b:GPGUnknownRecipients")  && type(b:GPGUnknownRecipients) == type([]))
-    let recipients += b:GPGUnknownRecipients
-  else
-    unlet b:GPGUnknownRecipients
-  endif
-  let b:GPGRecipients = []
-  let b:GPGUnknownRecipients = []
-  for recipient in recipients
-    let gpgid=s:GPGNameToID(recipient)
-    if (strlen(gpgid) > 0)
-      if (match(b:GPGRecipients, gpgid) < 0)
-        let b:GPGRecipients+=[gpgid]
-      endif
-    else
-      if (match(b:GPGUnknownRecipients, recipient) < 0)
-        let b:GPGUnknownRecipients+=[recipient]
-        echohl GPGWarning
-        echom "The recipient \"" . recipient . "\" is not in your public keyring!"
-        echohl None
-      endif
-    end
-  endfor
+  let [ recipients, unknownrecipients ] = s:GPGCheckRecipients(b:GPGRecipients)
 
   " check if there are unknown recipients and warn
-  if(exists("b:GPGUnknownRecipients") && len(b:GPGUnknownRecipients) > 0)
+  if(len(unknownrecipients) > 0)
     echohl GPGWarning
     echom "Please use GPGEditRecipients to correct!!"
     echo
@@ -403,8 +375,8 @@ function s:GPGEncrypt()
   endif
 
   " built list of recipients
-  if (exists("b:GPGRecipients") && len(b:GPGRecipients) > 0)
-    for gpgid in b:GPGRecipients
+  if (len(recipients) > 0)
+    for gpgid in recipients
       let options=options . " -r " . gpgid
     endfor
   else
@@ -478,28 +450,28 @@ function s:GPGViewRecipients()
     return
   endif
 
-  if (exists("b:GPGRecipients"))
-    echo 'This file has following recipients (Unknown recipients have a prepended "!"):'
-    " echo the recipients
-    for name in b:GPGRecipients
-      let name=s:GPGIDToName(name)
-      echo name
-    endfor
+  let [ recipients, unknownrecipients ] = s:GPGCheckRecipients(b:GPGRecipients)
 
-    " echo the unknown recipients
-    echohl GPGWarning
-    for name in b:GPGUnknownRecipients
-      let name="!" . name
-      echo name
-    endfor
+  echo 'This file has following recipients (Unknown recipients have a prepended "!"):'
+  " echo the recipients
+  for name in recipients
+    let name=s:GPGIDToName(name)
+    echo name
+  endfor
+
+  " echo the unknown recipients
+  echohl GPGWarning
+  for name in unknownrecipients
+    let name="!" . name
+    echo name
+  endfor
+  echohl None
+
+  " check if there is any known recipient
+  if (len(recipients) == 0)
+    echohl GPGError
+    echom 'There are no known recipients!'
     echohl None
-
-    " check if there is any known recipient
-    if (len(b:GPGRecipients) == 0)
-      echohl GPGError
-      echom 'There are no known recipients!'
-      echohl None
-    endif
   endif
 endfunction
 
@@ -565,23 +537,16 @@ function s:GPGEditRecipients()
     silent put ='GPG: Closing this buffer commits changes'
     silent put ='GPG: ----------------------------------------------------------------------'
 
+    " get the recipients
+    let [ recipients, unknownrecipients ] = s:GPGCheckRecipients(getbufvar(b:GPGCorrespondingTo, "GPGRecipients"))
+
     " put the recipients in the scratch buffer
-    let recipients=getbufvar(b:GPGCorrespondingTo, "GPGRecipients")
-    if (type(recipients) != type([]))
-      unlet recipients
-      let recipients=[]
-    endif
     for name in recipients
       let name=s:GPGIDToName(name)
       silent put =name
     endfor
 
     " put the unknown recipients in the scratch buffer
-    let unknownrecipients=getbufvar(b:GPGCorrespondingTo, "GPGUnknownRecipients")
-    if (type(unknownrecipients) != type([]))
-      unlet unknownrecipients
-      let unknownrecipients=[]
-    endif
     let syntaxPattern="\\(nonexxistinwordinthisbuffer"
     for name in unknownrecipients
       let name="!" . name
@@ -634,7 +599,6 @@ function s:GPGFinishRecipientsBuffer()
 
   " get the recipients from the scratch buffer
   let recipients=[]
-  let unknownrecipients=[]
   let lines=getline(1,"$")
   for recipient in lines
     " delete all spaces at beginning and end of the recipient
@@ -651,8 +615,8 @@ function s:GPGFinishRecipientsBuffer()
           let recipients+=[gpgid]
         endif
       else
-        if (match(unknownrecipients, recipient) < 0)
-          let unknownrecipients+=[recipient]
+        if (match(recipients, recipient) < 0)
+          let recipients+=[recipient]
           echohl GPGWarning
           echom "The recipient \"" . recipient . "\" is not in your public keyring!"
           echohl None
@@ -664,7 +628,6 @@ function s:GPGFinishRecipientsBuffer()
   " write back the new recipient list to the corresponding buffer and mark it
   " as modified. Buffer is now for sure a encrypted buffer.
   call setbufvar(b:GPGCorrespondingTo, "GPGRecipients", recipients)
-  call setbufvar(b:GPGCorrespondingTo, "GPGUnknownRecipients", unknownrecipients)
   call setbufvar(b:GPGCorrespondingTo, "&mod", 1)
   call setbufvar(b:GPGCorrespondingTo, "GPGEncrypted", 1)
 
@@ -834,6 +797,38 @@ function s:GPGFinishOptionsBuffer()
 
   " reset modified flag
   set nomodified
+endfunction
+
+" Function: s:GPGCheckRecipients(tocheck) {{{2
+"
+" check if recipients are known
+" Returns: two lists recipients and unknownrecipients
+function s:GPGCheckRecipients(tocheck)
+  let recipients=[]
+  let unknownrecipients=[]
+
+  if (type(a:tocheck) == type([]))
+    for recipient in a:tocheck
+      let gpgid=s:GPGNameToID(recipient)
+      if (strlen(gpgid) > 0)
+        if (match(recipients, gpgid) < 0)
+          let recipients+=[gpgid]
+        endif
+      else
+        if (match(unknownrecipients, recipient) < 0)
+          let unknownrecipients+=[recipient]
+          echohl GPGWarning
+          echom "The recipient \"" . recipient . "\" is not in your public keyring!"
+          echohl None
+        endif
+      end
+    endfor
+  endif
+
+  call s:GPGDebug(2, "recipients are: " . string(recipients))
+  call s:GPGDebug(2, "unknown recipients are: " . string(unknownrecipients))
+
+  return [ recipients, unknownrecipients ]
 endfunction
 
 " Function: s:GPGNameToID(name) {{{2
