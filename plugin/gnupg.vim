@@ -361,32 +361,51 @@ function s:GPGEncrypt()
     let options=options . " --" . option . " "
   endfor
 
-  " check recipientslist for unknown recipients again
-  for recipient in b:GPGUnknownRecipients
-    echohl GPGWarning
-    echom "The recipient \"" . recipient . "\" is not in your public keyring!"
-    echohl None
+  " check here again if all recipients are available in the keyring
+  let recipients = []
+  if (exists("b:GPGRecipients") && type(b:GPGRecipients) == type([]))
+    let recipients += b:GPGRecipients
+  else
+    unlet b:GPGRecipients
+  endif
+  if (exists("b:GPGUnknownRecipients")  && type(b:GPGUnknownRecipients) == type([]))
+    let recipients += b:GPGUnknownRecipients
+  else
+    unlet b:GPGUnknownRecipients
+  endif
+  let b:GPGRecipients = []
+  let b:GPGUnknownRecipients = []
+  for recipient in recipients
+    let gpgid=s:GPGNameToID(recipient)
+    if (strlen(gpgid) > 0)
+      if (match(b:GPGRecipients, gpgid) < 0)
+        let b:GPGRecipients+=[gpgid]
+      endif
+    else
+      if (match(b:GPGUnknownRecipients, recipient) < 0)
+        let b:GPGUnknownRecipients+=[recipient]
+        echohl GPGWarning
+        echom "The recipient \"" . recipient . "\" is not in your public keyring!"
+        echohl None
+      endif
+    end
   endfor
 
   " check if there are unknown recipients and warn
-  if(len(b:GPGUnknownRecipients) > 0)
+  if(exists("b:GPGUnknownRecipients") && len(b:GPGUnknownRecipients) > 0)
     echohl GPGWarning
-    echom "There are unknown recipients!!"
     echom "Please use GPGEditRecipients to correct!!"
     echo
     echohl None
-    call s:GPGDebug(1, "unknown recipients are: " . join(b:GPGUnknownRecipients, " "))
 
     " Let user know whats happend and copy known_recipients back to buffer
     let dummy=input("Press ENTER to quit")
   endif
 
   " built list of recipients
-  let recipients=""
   if (exists("b:GPGRecipients") && len(b:GPGRecipients) > 0)
-    call s:GPGDebug(1, "recipients are: " . join(b:GPGRecipients, " "))
     for gpgid in b:GPGRecipients
-      let recipients=recipients . " -r " . gpgid
+      let options=options . " -r " . gpgid
     endfor
   else
     if (match(b:GPGOptions, "encrypt") >= 0)
@@ -401,10 +420,10 @@ function s:GPGEncrypt()
   " encrypt the buffer
   let &shellredir=s:shellredir
   let &shell=s:shell
-  silent exec "'[,']!" . s:GPGCommand . " --quiet --no-encrypt-to " . options . recipients . " " . s:stderrredirnull
+  silent exec "'[,']!" . s:GPGCommand . " --quiet --no-encrypt-to " . options . " " . s:stderrredirnull
   let &shellredir=s:shellredirsave
   let &shell=s:shellsave
-  call s:GPGDebug(1, "called gpg command is: " . "'[,']!" . s:GPGCommand . " --quiet --no-encrypt-to " . options . recipients . " " . s:stderrredirnull)
+  call s:GPGDebug(1, "called gpg command is: " . "'[,']!" . s:GPGCommand . " --quiet --no-encrypt-to " . options . " " . s:stderrredirnull)
   if (v:shell_error) " message could not be encrypted
     silent u
     echohl GPGError
