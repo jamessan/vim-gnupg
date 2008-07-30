@@ -204,7 +204,7 @@ function s:GPGDecrypt()
   set bin
 
   " get the filename of the current buffer
-  let filename=fnameescape(expand("%:p"))
+  let filename=escape(expand("%:p"), '\"')
 
   " clear GPGEncrypted, GPGRecipients, GPGUnknownRecipients and GPGOptions
   let b:GPGEncrypted=0
@@ -304,8 +304,8 @@ function s:GPGDecrypt()
   set nobin
 
   " call the autocommand for the file minus .gpg$
-  execute ":doautocmd BufReadPost " . fnameescape(expand("%:r"))
-  call s:GPGDebug(2, "called autocommand for " . fnameescape(expand("%:r")))
+  execute ":doautocmd BufReadPost " . escape(expand("%:r"), ' *?\"'."'")
+  call s:GPGDebug(2, "called autocommand for " . escape(expand("%:r"), ' *?\"'."'"))
 
   " refresh screen
   redraw!
@@ -507,7 +507,7 @@ function s:GPGEditRecipients()
     " check if this buffer exists
     if (!bufexists(editbuffername))
       " create scratch buffer
-      execute 'silent! split ' . fnameescape(editbuffername)
+      execute 'silent! split ' . escape(editbuffername, ' *?\"'."'")
 
       " add a autocommand to regenerate the recipients after a write
       autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishRecipientsBuffer()
@@ -517,7 +517,7 @@ function s:GPGEditRecipients()
         execute 'silent! ' . bufwinnr(editbuffername) . "wincmd w"
       else
         " split scratch buffer window
-        execute 'silent! sbuffer ' . fnameescape(editbuffername)
+        execute 'silent! sbuffer ' . escape(editbuffername, ' *?\"'."'")
 
         " add a autocommand to regenerate the recipients after a write
         autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishRecipientsBuffer()
@@ -705,7 +705,7 @@ function s:GPGEditOptions()
     " check if this buffer exists
     if (!bufexists(editbuffername))
       " create scratch buffer
-      execute 'silent! split ' . fnameescape(editbuffername)
+      execute 'silent! split ' . escape(editbuffername, ' *?\"'."'")
 
       " add a autocommand to regenerate the options after a write
       autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishOptionsBuffer()
@@ -715,7 +715,7 @@ function s:GPGEditOptions()
         execute 'silent! ' . bufwinnr(editbuffername) . "wincmd w"
       else
         " split scratch buffer window
-        execute 'silent! sbuffer ' . fnameescape(editbuffername)
+        execute 'silent! sbuffer ' . escape(editbuffername, ' *?\"'."'")
 
         " add a autocommand to regenerate the options after a write
         autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishOptionsBuffer()
