@@ -21,6 +21,19 @@
 "   Refer to ':help add-plugin', ':help add-global-plugin' and ':help
 "   runtimepath' for more details about Vim plugins.
 "
+"   From "man 1 gpg-agent":
+"
+"   ...
+"   You should always add the following lines to your .bashrc or whatever
+"   initialization file is used for all shell invocations:
+"
+"        GPG_TTY=‘tty‘
+"        export GPG_TTY
+"
+"   It is important that this environment variable always reflects the out‐
+"   put of the tty command. For W32 systems this option is not required.
+"   ...
+"
 " Commands:
 "
 "   :GPGEditRecipients
@@ -63,6 +76,7 @@
 " - Lars Becker for patch to make gpg2 working.
 " - Thomas Arendsen Hein for patch to convert encoding of gpg output
 " - Karl-Heinz Ruskowski for patch to fix unknown recipients and trust model
+"   and patient beta testing.
 " - Giel van Schijndel for patch to get GPG_TTY dynamically.
 "
 " Section: Plugin header {{{1
