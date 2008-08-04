@@ -68,6 +68,10 @@
 "   g:GPGPreferArmor
 "     If set to 1 armored data is preferred for new files. Defaults to 0.
 "
+"   g:GPGDefaultRecipients
+"     If set, these recipients are used as defaults when no other recipient is
+"     defined. This variable is a Vim list. Default is unset.
+"
 " Credits:
 " - Mathieu Clabaut for inspirations through his vimspell.vim script.
 " - Richard Bronosky for patch to enable ".pgp" suffix.
@@ -554,6 +558,17 @@ function s:GPGEditRecipients()
     " get the recipients
     let [ recipients, unknownrecipients ] = s:GPGCheckRecipients(getbufvar(b:GPGCorrespondingTo, "GPGRecipients"))
 
+    " if there are no known or unknown recipients, use the default ones
+    if (exists("g:GPGDefaultRecipients") && len(recipients) == 0 && len(unknownrecipients) == 0)
+      if (type(g:GPGDefaultRecipients) == type([]))
+        let [ recipients, unknownrecipients ] = s:GPGCheckRecipients(g:GPGDefaultRecipients)
+      else
+        echohl GPGWarning
+        echom "g:GPGDefaultRecipients is not a Vim list, please correct this in your vimrc!"
+        echohl None
+      endif
+    endif
+
     " put the recipients in the scratch buffer
     for name in recipients
       let name=s:GPGIDToName(name)
@@ -635,7 +650,7 @@ function s:GPGFinishRecipientsBuffer()
           echom "The recipient \"" . recipient . "\" is not in your public keyring!"
           echohl None
         endif
-      end
+      endif
     endif
   endfor
 
