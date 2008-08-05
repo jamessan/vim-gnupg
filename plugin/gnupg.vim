@@ -153,6 +153,11 @@ function s:GPGInit()
   endif
 
   " check if debugging is turned on
+  if (!exists("g:GPGDefaultRecipients"))
+    let g:GPGDefaultRecipients = []
+  endif
+
+  " check if debugging is turned on
   if (!exists("g:GPGDebugLevel"))
     let g:GPGDebugLevel = 0
   endif
@@ -559,7 +564,7 @@ function s:GPGEditRecipients()
     let [ recipients, unknownrecipients ] = s:GPGCheckRecipients(getbufvar(b:GPGCorrespondingTo, "GPGRecipients"))
 
     " if there are no known or unknown recipients, use the default ones
-    if (exists("g:GPGDefaultRecipients") && len(recipients) == 0 && len(unknownrecipients) == 0)
+    if (len(recipients) == 0 && len(unknownrecipients) == 0)
       if (type(g:GPGDefaultRecipients) == type([]))
         let [ recipients, unknownrecipients ] = s:GPGCheckRecipients(g:GPGDefaultRecipients)
       else
