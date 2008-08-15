@@ -132,7 +132,7 @@ highlight default link GPGHighlightUnknownRecipient ErrorMsg
 function s:GPGInit()
   " first make sure nothing is written to ~/.viminfo while editing
   " an encrypted file.
-  set viminfo = 
+  set viminfo= 
 
   " we don't want a swap file, as it writes unencrypted data to disk
   set noswapfile
@@ -436,11 +436,13 @@ function s:GPGEncrypt()
   let &shell = s:shellsave
   call s:GPGDebug(1, "called gpg command is: " . "'[,']!" . s:GPGCommand . " --quiet --no-encrypt-to " . options . " " . s:stderrredirnull)
   if (v:shell_error) " message could not be encrypted
-    silent u
+    " delete content of the buffer to be sure no data is written unencrypted
+    " content will be recovered in GPGEncryptPost()
+    silent normal! 1GdG
+
     echohl GPGError
     let blackhole = input("Message could not be encrypted! File might be empty! (Press ENTER)")
     echohl None
-    bwipeout
     return
   endif
 
@@ -558,8 +560,8 @@ function s:GPGEditRecipients()
     endif
 
     " Mark the buffer as a scratch buffer
-    setlocal buftype = acwrite
-    setlocal bufhidden = hide
+    setlocal buftype=acwrite
+    setlocal bufhidden=hide
     setlocal noswapfile
     setlocal nowrap
     setlocal nobuflisted
@@ -758,7 +760,7 @@ function s:GPGEditOptions()
     endif
 
     " Mark the buffer as a scratch buffer
-    setlocal buftype = nofile
+    setlocal buftype=nofile
     setlocal noswapfile
     setlocal nowrap
     setlocal nobuflisted
