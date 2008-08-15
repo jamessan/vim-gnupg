@@ -86,7 +86,7 @@
 "   recipients.
 "
 " Section: Plugin header {{{1
-if v:version < 700
+if (v:version < 700)
   echohl ErrorMsg | echo 'plugin gnupg.vim requires Vim version >= 7.0' | echohl None
   finish
 endif
@@ -129,7 +129,7 @@ highlight default link GPGHighlightUnknownRecipient ErrorMsg
 function s:GPGInit()
   " first make sure nothing is written to ~/.viminfo while editing
   " an encrypted file.
-  set viminfo=
+  set viminfo = 
 
   " we don't want a swap file, as it writes unencrypted data to disk
   set noswapfile
@@ -179,21 +179,21 @@ function s:GPGInit()
         echohl None
       endif
     endif
-    let s:GPGCommand=g:GPGExecutable . " --use-agent"
+    let s:GPGCommand = g:GPGExecutable . " --use-agent"
   else
-    let s:GPGCommand=g:GPGExecutable . " --no-use-agent"
+    let s:GPGCommand = g:GPGExecutable . " --no-use-agent"
   endif
 
   " don't use tty in gvim
   " FIXME find a better way to avoid an error.
   "       with this solution only --use-agent will work
-  if has("gui_running")
-    let s:GPGCommand=s:GPGCommand . " --no-tty"
+  if (has("gui_running"))
+    let s:GPGCommand = s:GPGCommand . " --no-tty"
   endif
 
   " setup shell environment for unix and windows
-  let s:shellredirsave=&shellredir
-  let s:shellsave=&shell
+  let s:shellredirsave = &shellredir
+  let s:shellsave = &shell
   if (match(&shell,"\\(cmd\\|command\\).execute") >= 0)
     " windows specific settings
     let s:shellredir = '>%s'
@@ -203,21 +203,21 @@ function s:GPGInit()
     " unix specific settings
     let s:shellredir = &shellredir
     let s:shell = 'sh'
-    let s:stderrredirnull ='2>/dev/null'
-    let s:GPGCommand="LANG=C LC_ALL=C " . s:GPGCommand
+    let s:stderrredirnull = '2>/dev/null'
+    let s:GPGCommand = "LANG=C LC_ALL=C " . s:GPGCommand
   endif
 
   " find the supported algorithms
-  let &shellredir=s:shellredir
-  let &shell=s:shell
-  let output=system(s:GPGCommand . " --version")
-  let &shellredir=s:shellredirsave
-  let &shell=s:shellsave
+  let &shellredir = s:shellredir
+  let &shell = s:shell
+  let output = system(s:GPGCommand . " --version")
+  let &shellredir = s:shellredirsave
+  let &shell = s:shellsave
 
-  let s:GPGPubkey=substitute(output, ".*Pubkey: \\(.\\{-}\\)\n.*", "\\1", "")
-  let s:GPGCipher=substitute(output, ".*Cipher: \\(.\\{-}\\)\n.*", "\\1", "")
-  let s:GPGHash=substitute(output, ".*Hash: \\(.\\{-}\\)\n.*", "\\1", "")
-  let s:GPGCompress=substitute(output, ".*Compress: \\(.\\{-}\\)\n.*", "\\1", "")
+  let s:GPGPubkey = substitute(output, ".*Pubkey: \\(.\\{-}\\)\n.*", "\\1", "")
+  let s:GPGCipher = substitute(output, ".*Cipher: \\(.\\{-}\\)\n.*", "\\1", "")
+  let s:GPGHash = substitute(output, ".*Hash: \\(.\\{-}\\)\n.*", "\\1", "")
+  let s:GPGCompress = substitute(output, ".*Compress: \\(.\\{-}\\)\n.*", "\\1", "")
 endfunction
 
 " Function: s:GPGDecrypt() {{{2
@@ -229,34 +229,34 @@ function s:GPGDecrypt()
   set bin
 
   " get the filename of the current buffer
-  let filename=escape(expand("%:p"), '\"')
+  let filename = escape(expand("%:p"), '\"')
 
   " clear GPGEncrypted, GPGRecipients and GPGOptions
-  let b:GPGEncrypted=0
-  let b:GPGRecipients=[]
-  let b:GPGOptions=[]
+  let b:GPGEncrypted = 0
+  let b:GPGRecipients = []
+  let b:GPGOptions = []
 
   " find the recipients of the file
-  let &shellredir=s:shellredir
-  let &shell=s:shell
-  let output=system(s:GPGCommand . " --verbose --decrypt --list-only --dry-run --batch --no-use-agent --logger-fd 1 \"" . filename . "\"")
-  let &shellredir=s:shellredirsave
-  let &shell=s:shellsave
+  let &shellredir = s:shellredir
+  let &shell = s:shell
+  let output = system(s:GPGCommand . " --verbose --decrypt --list-only --dry-run --batch --no-use-agent --logger-fd 1 \"" . filename . "\"")
+  let &shellredir = s:shellredirsave
+  let &shell = s:shellsave
   call s:GPGDebug(1, "output of command '" . s:GPGCommand . " --verbose --decrypt --list-only --dry-run --batch --no-use-agent --logger-fd 1 \"" . filename . "\"' is:")
   call s:GPGDebug(1, ">>>>> " . output . " <<<<<")
 
   " check if the file is symmetric/asymmetric encrypted
   if (match(output, "gpg: encrypted with [[:digit:]]\\+ passphrase") >= 0)
     " file is symmetric encrypted
-    let b:GPGEncrypted=1
+    let b:GPGEncrypted = 1
     call s:GPGDebug(1, "this file is symmetric encrypted")
 
-    let b:GPGOptions+=["symmetric"]
+    let b:GPGOptions += ["symmetric"]
 
     " find the used cipher algorithm
-    let cipher=substitute(output, ".*gpg: \\([^ ]\\+\\) encrypted data.*", "\\1", "")
+    let cipher = substitute(output, ".*gpg: \\([^ ]\\+\\) encrypted data.*", "\\1", "")
     if (match(s:GPGCipher, "\\<" . cipher . "\\>") >= 0)
-      let b:GPGOptions+=["cipher-algo " . cipher]
+      let b:GPGOptions += ["cipher-algo " . cipher]
       call s:GPGDebug(1, "cipher-algo is " . cipher)
     else
       echohl GPGWarning
@@ -266,32 +266,32 @@ function s:GPGDecrypt()
     endif
   elseif (match(output, "gpg: public key is [[:xdigit:]]\\{8}") >= 0)
     " file is asymmetric encrypted
-    let b:GPGEncrypted=1
+    let b:GPGEncrypted = 1
     call s:GPGDebug(1, "this file is asymmetric encrypted")
 
-    let b:GPGOptions+=["encrypt"]
+    let b:GPGOptions += ["encrypt"]
 
     " find the used public keys
-    let start=match(output, "gpg: public key is [[:xdigit:]]\\{8}")
+    let start = match(output, "gpg: public key is [[:xdigit:]]\\{8}")
     while (start >= 0)
-      let start=start + strlen("gpg: public key is ")
-      let recipient=strpart(output, start, 8)
+      let start = start + strlen("gpg: public key is ")
+      let recipient = strpart(output, start, 8)
       call s:GPGDebug(1, "recipient is " . recipient)
-      let name=s:GPGNameToID(recipient)
+      let name = s:GPGNameToID(recipient)
       if (strlen(name) > 0)
-        let b:GPGRecipients+=[name]
+        let b:GPGRecipients += [name]
         call s:GPGDebug(1, "name of recipient is " . name)
       else
-        let b:GPGRecipients+=[recipient]
+        let b:GPGRecipients += [recipient]
         echohl GPGWarning
         echom "The recipient \"" . recipient . "\" is not in your public keyring!"
         echohl None
       end
-      let start=match(output, "gpg: public key is [[:xdigit:]]\\{8}", start)
+      let start = match(output, "gpg: public key is [[:xdigit:]]\\{8}", start)
     endwhile
   else
     " file is not encrypted
-    let b:GPGEncrypted=0
+    let b:GPGEncrypted = 0
     call s:GPGDebug(1, "this file is not encrypted")
     echohl GPGWarning
     echom "File is not encrypted, all GPG functions disabled!"
@@ -303,21 +303,21 @@ function s:GPGDecrypt()
   " check if the message is armored
   if (match(output, "gpg: armor header") >= 0)
     call s:GPGDebug(1, "this file is armored")
-    let b:GPGOptions+=["armor"]
+    let b:GPGOptions += ["armor"]
   endif
 
   " finally decrypt the buffer content
   " since even with the --quiet option passphrase typos will be reported,
   " we must redirect stderr (using shell temporarily)
-  let &shellredir=s:shellredir
-  let &shell=s:shell
+  let &shellredir = s:shellredir
+  let &shell = s:shell
   exec "'[,']!" . s:GPGCommand . " --quiet --decrypt " . s:stderrredirnull
-  let &shellredir=s:shellredirsave
-  let &shell=s:shellsave
+  let &shellredir = s:shellredirsave
+  let &shell = s:shellsave
   if (v:shell_error) " message could not be decrypted
     silent u
     echohl GPGError
-    let blackhole=input("Message could not be decrypted! (Press ENTER)")
+    let blackhole = input("Message could not be decrypted! (Press ENTER)")
     echohl None
     bwipeout
     set nobin
@@ -345,7 +345,7 @@ function s:GPGEncrypt()
   call s:GPGDebug(2, "saved window view " . string(s:GPGWindowView))
 
   " store encoding and switch to a safe one
-  if &fileencoding != &encoding
+  if (&fileencoding != &encoding)
     let s:GPGEncoding = &encoding
     let &encoding = &fileencoding
     call s:GPGDebug(2, "encoding was \"" . s:GPGEncoding . "\", switched to \"" . &encoding . "\"")
@@ -367,23 +367,23 @@ function s:GPGEncrypt()
 
   " initialize GPGOptions if not happened before
   if (!exists("b:GPGOptions") || len(b:GPGOptions) == 0)
-    let b:GPGOptions=[]
+    let b:GPGOptions = []
     if (exists("g:GPGPreferSymmetric") && g:GPGPreferSymmetric == 1)
-      let b:GPGOptions+=["symmetric"]
-      let b:GPGRecipients=[]
+      let b:GPGOptions += ["symmetric"]
+      let b:GPGRecipients = []
     else
-      let b:GPGOptions+=["encrypt"]
+      let b:GPGOptions += ["encrypt"]
     endif
     if (exists("g:GPGPreferArmor") && g:GPGPreferArmor == 1)
-      let b:GPGOptions+=["armor"]
+      let b:GPGOptions += ["armor"]
     endif
     call s:GPGDebug(1, "no options set, so using default options: " . string(b:GPGOptions))
   endif
 
   " built list of options
-  let options=""
+  let options = ""
   for option in b:GPGOptions
-    let options=options . " --" . option . " "
+    let options = options . " --" . option . " "
   endfor
 
   " check here again if all recipients are available in the keyring
@@ -397,13 +397,13 @@ function s:GPGEncrypt()
     echohl None
 
     " Let user know whats happend and copy known_recipients back to buffer
-    let dummy=input("Press ENTER to quit")
+    let dummy = input("Press ENTER to quit")
   endif
 
   " built list of recipients
   if (len(recipients) > 0)
     for gpgid in recipients
-      let options=options . " -r " . gpgid
+      let options = options . " -r " . gpgid
     endfor
   else
     if (match(b:GPGOptions, "encrypt") >= 0)
@@ -416,16 +416,16 @@ function s:GPGEncrypt()
   endif
 
   " encrypt the buffer
-  let &shellredir=s:shellredir
-  let &shell=s:shell
+  let &shellredir = s:shellredir
+  let &shell = s:shell
   silent exec "'[,']!" . s:GPGCommand . " --quiet --no-encrypt-to " . options . " " . s:stderrredirnull
-  let &shellredir=s:shellredirsave
-  let &shell=s:shellsave
+  let &shellredir = s:shellredirsave
+  let &shell = s:shellsave
   call s:GPGDebug(1, "called gpg command is: " . "'[,']!" . s:GPGCommand . " --quiet --no-encrypt-to " . options . " " . s:stderrredirnull)
   if (v:shell_error) " message could not be encrypted
     silent u
     echohl GPGError
-    let blackhole=input("Message could not be encrypted! File might be empty! (Press ENTER)")
+    let blackhole = input("Message could not be encrypted! File might be empty! (Press ENTER)")
     echohl None
     bwipeout
     return
@@ -450,7 +450,7 @@ function s:GPGEncryptPost()
   set nobin
 
   " restore encoding
-  if s:GPGEncoding != ""
+  if (s:GPGEncoding != "")
     let &encoding = s:GPGEncoding
     call s:GPGDebug(2, "restored encoding \"" . &encoding . "\"")
   endif
@@ -481,14 +481,14 @@ function s:GPGViewRecipients()
   echo 'This file has following recipients (Unknown recipients have a prepended "!"):'
   " echo the recipients
   for name in recipients
-    let name=s:GPGIDToName(name)
+    let name = s:GPGIDToName(name)
     echo name
   endfor
 
   " echo the unknown recipients
   echohl GPGWarning
   for name in unknownrecipients
-    let name="!" . name
+    let name = "!" . name
     echo name
   endfor
   echohl None
@@ -518,8 +518,8 @@ function s:GPGEditRecipients()
   if (match(bufname("%"), "^\\(GPGRecipients_\\|GPGOptions_\\)") != 0 && match(bufname("%"), "\.\\(gpg\\|asc\\|pgp\\)$") >= 0)
 
     " save buffer name
-    let buffername=bufname("%")
-    let editbuffername="GPGRecipients_" . buffername
+    let buffername = bufname("%")
+    let editbuffername = "GPGRecipients_" . buffername
 
     " check if this buffer exists
     if (!bufexists(editbuffername))
@@ -545,15 +545,15 @@ function s:GPGEditRecipients()
     endif
 
     " Mark the buffer as a scratch buffer
-    setlocal buftype=acwrite
-    setlocal bufhidden=hide
+    setlocal buftype = acwrite
+    setlocal bufhidden = hide
     setlocal noswapfile
     setlocal nowrap
     setlocal nobuflisted
     setlocal nonumber
 
     " so we know for which other buffer this edit buffer is
-    let b:GPGCorrespondingTo=buffername
+    let b:GPGCorrespondingTo = buffername
 
     " put some comments to the scratch buffer
     silent put ='GPG: ----------------------------------------------------------------------'
@@ -579,18 +579,18 @@ function s:GPGEditRecipients()
 
     " put the recipients in the scratch buffer
     for name in recipients
-      let name=s:GPGIDToName(name)
+      let name = s:GPGIDToName(name)
       silent put =name
     endfor
 
     " put the unknown recipients in the scratch buffer
-    let syntaxPattern="\\(nonexxistinwordinthisbuffer"
+    let syntaxPattern = "\\(nonexxistinwordinthisbuffer"
     for name in unknownrecipients
-      let name="!" . name
-      let syntaxPattern=syntaxPattern . "\\|" . name
+      let name = "!" . name
+      let syntaxPattern = syntaxPattern . "\\|" . name
       silent put =name
     endfor
-    let syntaxPattern=syntaxPattern . "\\)"
+    let syntaxPattern = syntaxPattern . "\\)"
 
     " define highlight
     if (has("syntax") && exists("g:syntax_on"))
@@ -635,25 +635,25 @@ function s:GPGFinishRecipientsBuffer()
 
 
   " get the recipients from the scratch buffer
-  let recipients=[]
-  let lines=getline(1,"$")
+  let recipients = []
+  let lines = getline(1,"$")
   for recipient in lines
     " delete all spaces at beginning and end of the recipient
     " also delete a '!' at the beginning of the recipient
-    let recipient=substitute(recipient, "^[[:space:]!]*\\(.\\{-}\\)[[:space:]]*$", "\\1", "")
+    let recipient = substitute(recipient, "^[[:space:]!]*\\(.\\{-}\\)[[:space:]]*$", "\\1", "")
     " delete comment lines
-    let recipient=substitute(recipient, "^GPG:.*$", "", "")
+    let recipient = substitute(recipient, "^GPG:.*$", "", "")
 
     " only do this if the line is not empty
     if (strlen(recipient) > 0)
-      let gpgid=s:GPGNameToID(recipient)
+      let gpgid = s:GPGNameToID(recipient)
       if (strlen(gpgid) > 0)
         if (match(recipients, gpgid) < 0)
-          let recipients+=[gpgid]
+          let recipients += [gpgid]
         endif
       else
         if (match(recipients, recipient) < 0)
-          let recipients+=[recipient]
+          let recipients += [recipient]
           echohl GPGWarning
           echom "The recipient \"" . recipient . "\" is not in your public keyring!"
           echohl None
@@ -718,8 +718,8 @@ function s:GPGEditOptions()
   if (match(bufname("%"), "^\\(GPGRecipients_\\|GPGOptions_\\)") != 0 && match(bufname("%"), "\.\\(gpg\\|asc\\|pgp\\)$") >= 0)
 
     " save buffer name
-    let buffername=bufname("%")
-    let editbuffername="GPGOptions_" . buffername
+    let buffername = bufname("%")
+    let editbuffername = "GPGOptions_" . buffername
 
     " check if this buffer exists
     if (!bufexists(editbuffername))
@@ -745,14 +745,14 @@ function s:GPGEditOptions()
     endif
 
     " Mark the buffer as a scratch buffer
-    setlocal buftype=nofile
+    setlocal buftype = nofile
     setlocal noswapfile
     setlocal nowrap
     setlocal nobuflisted
     setlocal nonumber
 
     " so we know for which other buffer this edit buffer is
-    let b:GPGCorrespondingTo=buffername
+    let b:GPGCorrespondingTo = buffername
 
     " put some comments to the scratch buffer
     silent put ='GPG: ----------------------------------------------------------------------'
@@ -766,7 +766,7 @@ function s:GPGEditOptions()
     silent put ='GPG: ----------------------------------------------------------------------'
 
     " put the options in the scratch buffer
-    let options=getbufvar(b:GPGCorrespondingTo, "GPGOptions")
+    let options = getbufvar(b:GPGCorrespondingTo, "GPGOptions")
 
     for option in options
       silent put =option
@@ -806,24 +806,24 @@ function s:GPGFinishOptionsBuffer()
   endif
 
   " clear options and unknownOptions
-  let options=[]
-  let unknownOptions=[]
+  let options = []
+  let unknownOptions = []
 
   " delete the autocommand
   autocmd! * <buffer>
 
   " get the options from the scratch buffer
-  let lines=getline(1, "$")
+  let lines = getline(1, "$")
   for option in lines
     " delete all spaces at beginning and end of the option
     " also delete a '!' at the beginning of the option
-    let option=substitute(option, "^[[:space:]!]*\\(.\\{-}\\)[[:space:]]*$", "\\1", "")
+    let option = substitute(option, "^[[:space:]!]*\\(.\\{-}\\)[[:space:]]*$", "\\1", "")
     " delete comment lines
-    let option=substitute(option, "^GPG:.*$", "", "")
+    let option = substitute(option, "^GPG:.*$", "", "")
 
     " only do this if the line is not empty
     if (strlen(option) > 0 && match(options, option) < 0)
-      let options+=[option]
+      let options += [option]
     endif
   endfor
 
@@ -841,19 +841,19 @@ endfunction
 " check if recipients are known
 " Returns: two lists recipients and unknownrecipients
 function s:GPGCheckRecipients(tocheck)
-  let recipients=[]
-  let unknownrecipients=[]
+  let recipients = []
+  let unknownrecipients = []
 
   if (type(a:tocheck) == type([]))
     for recipient in a:tocheck
-      let gpgid=s:GPGNameToID(recipient)
+      let gpgid = s:GPGNameToID(recipient)
       if (strlen(gpgid) > 0)
         if (match(recipients, gpgid) < 0)
-          let recipients+=[gpgid]
+          let recipients += [gpgid]
         endif
       else
         if (match(unknownrecipients, recipient) < 0)
-          let unknownrecipients+=[recipient]
+          let unknownrecipients += [recipient]
           echohl GPGWarning
           echom "The recipient \"" . recipient . "\" is not in your public keyring!"
           echohl None
@@ -874,60 +874,60 @@ endfunction
 " Returns: ID for the given name
 function s:GPGNameToID(name)
   " ask gpg for the id for a name
-  let &shellredir=s:shellredir
-  let &shell=s:shell
-  let output=system(s:GPGCommand . " --quiet --with-colons --fixed-list-mode --list-keys \"" . a:name . "\"")
-  let &shellredir=s:shellredirsave
-  let &shell=s:shellsave
+  let &shellredir = s:shellredir
+  let &shell = s:shell
+  let output = system(s:GPGCommand . " --quiet --with-colons --fixed-list-mode --list-keys \"" . a:name . "\"")
+  let &shellredir = s:shellredirsave
+  let &shell = s:shellsave
 
   " when called with "--with-colons" gpg encodes its output _ALWAYS_ as UTF-8,
   " so convert it, if necessary
-  if &encoding != "utf-8"
-    let output=iconv(output, "utf-8", &encoding)
+  if (&encoding != "utf-8")
+    let output = iconv(output, "utf-8", &encoding)
   endif
-  let lines=split(output, "\n")
+  let lines = split(output, "\n")
 
   " parse the output of gpg
-  let pubseen=0
-  let uidseen=0
-  let counter=0
-  let gpgids=[]
-  let choices="The name \"" . a:name . "\" is ambiguous. Please select the correct key:\n"
+  let pubseen = 0
+  let uidseen = 0
+  let counter = 0
+  let gpgids = []
+  let choices = "The name \"" . a:name . "\" is ambiguous. Please select the correct key:\n"
   for line in lines
-    let fields=split(line, ":")
+    let fields = split(line, ":")
     " search for the next uid
     if (pubseen == 1)
       if (fields[0] == "uid")
         if (uidseen == 0)
-          let choices=choices . counter . ": " . fields[9] . "\n"
-          let counter=counter+1
-          let uidseen=1
+          let choices = choices . counter . ": " . fields[9] . "\n"
+          let counter = counter+1
+          let uidseen = 1
         else
-          let choices=choices . "   " . fields[9] . "\n"
+          let choices = choices . "   " . fields[9] . "\n"
         endif
       else
-        let uidseen=0
-        let pubseen=0
+        let uidseen = 0
+        let pubseen = 0
       endif
     endif
 
     " search for the next pub
     if (pubseen == 0)
       if (fields[0] == "pub")
-        let gpgids+=[fields[4]]
-        let pubseen=1
+        let gpgids += [fields[4]]
+        let pubseen = 1
       endif
     endif
 
   endfor
 
   " counter > 1 means we have more than one results
-  let answer=0
+  let answer = 0
   if (counter > 1)
-    let choices=choices . "Enter number: "
-    let answer=input(choices, "0")
+    let choices = choices . "Enter number: "
+    let answer = input(choices, "0")
     while (answer == "")
-      let answer=input("Enter number: ", "0")
+      let answer = input("Enter number: ", "0")
     endwhile
   endif
 
@@ -942,32 +942,32 @@ function s:GPGIDToName(identity)
   " TODO is the encryption subkey really unique?
 
   " ask gpg for the id for a name
-  let &shellredir=s:shellredir
-  let &shell=s:shell
-  let output=system(s:GPGCommand . " --quiet --with-colons --fixed-list-mode --list-keys " . a:identity )
-  let &shellredir=s:shellredirsave
-  let &shell=s:shellsave
+  let &shellredir = s:shellredir
+  let &shell = s:shell
+  let output = system(s:GPGCommand . " --quiet --with-colons --fixed-list-mode --list-keys " . a:identity )
+  let &shellredir = s:shellredirsave
+  let &shell = s:shellsave
 
   " when called with "--with-colons" gpg encodes its output _ALWAYS_ as UTF-8,
   " so convert it, if necessary
-  if &encoding != "utf-8"
-    let output=iconv(output, "utf-8", &encoding)
+  if (&encoding != "utf-8")
+    let output = iconv(output, "utf-8", &encoding)
   endif
-  let lines=split(output, "\n")
+  let lines = split(output, "\n")
 
   " parse the output of gpg
-  let pubseen=0
-  let uid=""
+  let pubseen = 0
+  let uid = ""
   for line in lines
-    let fields=split(line, ":")
+    let fields = split(line, ":")
     if (pubseen == 0) " search for the next pub
       if (fields[0] == "pub")
-        let pubseen=1
+        let pubseen = 1
       endif
     else " search for the next uid
       if (fields[0] == "uid")
-        let pubseen=0
-        let uid=fields[9]
+        let pubseen = 0
+        let uid = fields[9]
         break
       endif
     endif
@@ -991,7 +991,7 @@ command! GPGEditRecipients call s:GPGEditRecipients()
 command! GPGViewOptions call s:GPGViewOptions()
 command! GPGEditOptions call s:GPGEditOptions()
 " Section: Menu {{{1
-if has("menu")
+if (has("menu"))
   amenu <silent> Plugin.GnuPG.View\ Recipients :GPGViewRecipients<CR>
   amenu <silent> Plugin.GnuPG.Edit\ Recipients :GPGEditRecipients<CR>
   amenu <silent> Plugin.GnuPG.View\ Options :GPGViewOptions<CR>
