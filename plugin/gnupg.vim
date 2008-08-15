@@ -82,6 +82,8 @@
 " - Karl-Heinz Ruskowski for patch to fix unknown recipients and trust model
 "   and patient beta testing.
 " - Giel van Schijndel for patch to get GPG_TTY dynamically.
+" - Sebastian Luettich for patch to fix issue with symmetric encryption an set
+"   recipients.
 "
 " Section: Plugin header {{{1
 if v:version < 700
@@ -368,6 +370,7 @@ function s:GPGEncrypt()
     let b:GPGOptions=[]
     if (exists("g:GPGPreferSymmetric") && g:GPGPreferSymmetric == 1)
       let b:GPGOptions+=["symmetric"]
+      let b:GPGRecipients=[]
     else
       let b:GPGOptions+=["encrypt"]
     endif
@@ -387,7 +390,7 @@ function s:GPGEncrypt()
   let [ recipients, unknownrecipients ] = s:GPGCheckRecipients(b:GPGRecipients)
 
   " check if there are unknown recipients and warn
-  if(len(unknownrecipients) > 0)
+  if (len(unknownrecipients) > 0)
     echohl GPGWarning
     echom "Please use GPGEditRecipients to correct!!"
     echo
