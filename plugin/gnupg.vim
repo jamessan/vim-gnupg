@@ -114,6 +114,9 @@ augroup GnuPG
   " undo the encryption so we are back in the normal text, directly
   " after the file has been written.
   autocmd BufWritePost,FileWritePost             *.\(gpg\|asc\|pgp\) call s:GPGEncryptPost()
+
+  " cleanup on leaving vim
+  autocmd VimLeave                               *.\(gpg\|asc\|pgp\) call s:GPGCleanup()
 augroup END
 
 " Section: Highlight setup {{{1
@@ -218,6 +221,16 @@ function s:GPGInit()
   let s:GPGCipher = substitute(output, ".*Cipher: \\(.\\{-}\\)\n.*", "\\1", "")
   let s:GPGHash = substitute(output, ".*Hash: \\(.\\{-}\\)\n.*", "\\1", "")
   let s:GPGCompress = substitute(output, ".*Compress: \\(.\\{-}\\)\n.*", "\\1", "")
+endfunction
+
+" Function: s:GPGCleanup() {{{2
+"
+" cleanup on leaving vim
+"
+function s:GPGCleanup()
+  " wipe out screen
+  new +only
+  redraw!
 endfunction
 
 " Function: s:GPGDecrypt() {{{2
