@@ -27,7 +27,7 @@
 "   You should always add the following lines to your .bashrc or whatever
 "   initialization file is used for all shell invocations:
 "
-"        GPG_TTY=‘tty‘
+"        GPG_TTY=`tty`
 "        export GPG_TTY
 "
 "   It is important that this environment variable always reflects the out‐
