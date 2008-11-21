@@ -201,7 +201,7 @@ function s:GPGInit()
     " windows specific settings
     let s:shellredir = '>%s'
     let s:shell = &shell
-    let s:stderrredirnull = '2>nul'
+    let s:stderrredirnull = '2>null'
   else
     " unix specific settings
     let s:shellredir = &shellredir
