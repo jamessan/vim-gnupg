@@ -198,16 +198,16 @@ function s:GPGInit()
   let s:shellredirsave = &shellredir
   let s:shellsave = &shell
   if (has("unix"))
-    " windows specific settings
-    let s:shellredir = '>%s'
-    let s:shell = &shell
-    let s:stderrredirnull = '2>null'
-  else
     " unix specific settings
     let s:shellredir = &shellredir
     let s:shell = 'sh'
     let s:stderrredirnull = '2>/dev/null'
     let s:GPGCommand = "LANG=C LC_ALL=C " . s:GPGCommand
+  else
+    " windows specific settings
+    let s:shellredir = '>%s'
+    let s:shell = &shell
+    let s:stderrredirnull = '2>nul'
   endif
 
   " find the supported algorithms
