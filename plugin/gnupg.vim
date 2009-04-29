@@ -7,7 +7,7 @@
 "           See http://www.gnu.org/copyleft/gpl.txt
 " Section: Documentation {{{1
 " Description:
-"   
+"
 "   This script implements transparent editing of gpg encrypted files. The
 "   filename must have a ".gpg", ".pgp" or ".asc" suffix. When opening such
 "   a file the content is decrypted, when opening a new file the script will
@@ -15,7 +15,7 @@
 "   encrypted to all recipients before it is written. The script turns off
 "   viminfo and swapfile to increase security.
 "
-" Installation: 
+" Installation:
 "
 "   Copy the gnupg.vim file to the $HOME/.vim/plugin directory.
 "   Refer to ':help add-plugin', ':help add-global-plugin' and ':help
@@ -72,18 +72,40 @@
 "     If set, these recipients are used as defaults when no other recipient is
 "     defined. This variable is a Vim list. Default is unset.
 "
+" Known Issues:
+"
+"   gvim can't decryt files
+
+"   This is caused by the fact that a running gvim has no TTY and thus gpg is
+"   not able to ask for the passphrase by itself. This is a problem for Windows
+"   and Linux versions of gvim and could not be solved unless a "terminal
+"   emulation" is implemented for gvim. To circumvent this you have to use any
+"   combination of gpg-agent and a graphical pinentry program:
+"
+"     - gpg-agent only:
+"         you need to provide the passphrase for the needed key to gpg-agent
+"         in a terminal before you open files with gvim which require this key.
+"
+"     - pinentry only:
+"         you will get a popup window every time you open a file that needs to
+"         be decrypted.
+"
+"     - gpgagent and pinentry:
+"         you will get a popup window the first time you open a file that
+"         needs to be decrypted.
+"
 " Credits:
-" - Mathieu Clabaut for inspirations through his vimspell.vim script.
-" - Richard Bronosky for patch to enable ".pgp" suffix.
-" - Erik Remmelzwaal for patch to enable windows support and patient beta
-"   testing.
-" - Lars Becker for patch to make gpg2 working.
-" - Thomas Arendsen Hein for patch to convert encoding of gpg output
-" - Karl-Heinz Ruskowski for patch to fix unknown recipients and trust model
-"   and patient beta testing.
-" - Giel van Schijndel for patch to get GPG_TTY dynamically.
-" - Sebastian Luettich for patch to fix issue with symmetric encryption an set
-"   recipients.
+"   - Mathieu Clabaut for inspirations through his vimspell.vim script.
+"   - Richard Bronosky for patch to enable ".pgp" suffix.
+"   - Erik Remmelzwaal for patch to enable windows support and patient beta
+"     testing.
+"   - Lars Becker for patch to make gpg2 working.
+"   - Thomas Arendsen Hein for patch to convert encoding of gpg output
+"   - Karl-Heinz Ruskowski for patch to fix unknown recipients and trust model
+"     and patient beta testing.
+"   - Giel van Schijndel for patch to get GPG_TTY dynamically.
+"   - Sebastian Luettich for patch to fix issue with symmetric encryption an set
+"     recipients.
 "
 " Section: Plugin header {{{1
 if (v:version < 700)
@@ -132,7 +154,7 @@ highlight default link GPGHighlightUnknownRecipient ErrorMsg
 function s:GPGInit()
   " first make sure nothing is written to ~/.viminfo while editing
   " an encrypted file.
-  set viminfo= 
+  set viminfo=
 
   " we don't want a swap file, as it writes unencrypted data to disk
   set noswapfile
