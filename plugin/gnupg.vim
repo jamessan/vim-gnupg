@@ -1012,4 +1012,5 @@ if (has("menu"))
   amenu <silent> Plugin.GnuPG.View\ Options :GPGViewOptions<CR>
   amenu <silent> Plugin.GnuPG.Edit\ Options :GPGEditOptions<CR>
 endif
-" vim600: foldmethod=marker:foldlevel=0
+
+" vim600: set foldmethod=marker foldlevel=0 :
