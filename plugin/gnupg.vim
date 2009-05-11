@@ -68,6 +68,9 @@
 "   g:GPGPreferArmor
 "     If set to 1 armored data is preferred for new files. Defaults to 0.
 "
+"   g:GPGPreferSign
+"     If set to 1 signed data is preferred for new files. Defaults to 0.
+"
 "   g:GPGDefaultRecipients
 "     If set, these recipients are used as defaults when no other recipient is
 "     defined. This variable is a Vim list. Default is unset.
@@ -106,6 +109,7 @@
 "   - Giel van Schijndel for patch to get GPG_TTY dynamically.
 "   - Sebastian Luettich for patch to fix issue with symmetric encryption an set
 "     recipients.
+"   - Tim Swast for patch to generate signed files
 "
 " Section: Plugin header {{{1
 if (v:version < 700)
@@ -177,6 +181,11 @@ function s:GPGInit()
   " check if armored files are preferred
   if (!exists("g:GPGPreferArmor"))
     let g:GPGPreferArmor = 0
+  endif
+
+  " check if signed files are preferred
+  if (!exists("g:GPGPreferSign"))
+    let g:GPGPreferSign = 0
   endif
 
   " check if debugging is turned on
@@ -411,6 +420,9 @@ function s:GPGEncrypt()
     endif
     if (exists("g:GPGPreferArmor") && g:GPGPreferArmor == 1)
       let b:GPGOptions += ["armor"]
+    endif
+    if (exists("g:GPGPreferSign") && g:GPGPreferSign == 1)
+      let b:GPGOptions += ["sign"]
     endif
     call s:GPGDebug(1, "no options set, so using default options: " . string(b:GPGOptions))
   endif
