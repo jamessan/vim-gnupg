@@ -98,6 +98,7 @@
 "         needs to be decrypted.
 "
 " Credits:
+"
 "   - Mathieu Clabaut for inspirations through his vimspell.vim script.
 "   - Richard Bronosky for patch to enable ".pgp" suffix.
 "   - Erik Remmelzwaal for patch to enable windows support and patient beta
