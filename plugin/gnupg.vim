@@ -77,7 +77,7 @@
 "
 " Known Issues:
 "
-"   gvim can't decryt files
+"   In some cases gvim can't decryt files
 
 "   This is caused by the fact that a running gvim has no TTY and thus gpg is
 "   not able to ask for the passphrase by itself. This is a problem for Windows
