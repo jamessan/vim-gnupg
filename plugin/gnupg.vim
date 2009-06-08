@@ -1,5 +1,5 @@
 " Name: gnupg.vim
-" Version:  $Id: gnupg.vim 2773 2009-05-27 07:10:20Z mbr $
+" Version:  $Id: gnupg.vim 2782 2009-06-08 12:32:13Z mbr $
 " Author:   Markus Braun <markus.braun@krawel.de>
 " Summary:  Vim plugin for transparent editing of gpg encrypted files.
 " Licence:  This program is free software; you can redistribute it and/or
@@ -122,7 +122,7 @@ if (exists("g:loaded_gnupg") || &cp || exists("#BufReadPre#*.\(gpg\|asc\|pgp\)")
   finish
 endif
 
-let g:loaded_gnupg = "$Revision: 2773 $"
+let g:loaded_gnupg = "$Revision: 2782 $"
 
 " Section: Autocmd setup {{{1
 augroup GnuPG
@@ -145,6 +145,9 @@ augroup GnuPG
   " cleanup on leaving vim
   autocmd VimLeave                               *.\(gpg\|asc\|pgp\) call s:GPGCleanup()
 augroup END
+
+" Section: Constants {{{1
+let s:GPGMagicString = "\t \t"
 
 " Section: Highlight setup {{{1
 highlight default link GPGWarning WarningMsg
@@ -607,10 +610,11 @@ function s:GPGEditRecipients()
 
     " put some comments to the scratch buffer
     silent put ='GPG: ----------------------------------------------------------------------'
-    silent put ='GPG: Please edit the list of recipients, one recipient per line'
-    silent put ='GPG: Unknown recipients have a prepended \"!\"'
-    silent put ='GPG: Lines beginning with \"GPG:\" are removed automatically'
-    silent put ='GPG: Closing this buffer commits changes'
+    silent put ='GPG: Please edit the list of recipients, one recipient per line.'
+    silent put ='GPG: Unknown recipients have a prepended \"!\".'
+    silent put ='GPG: Lines beginning with \"GPG:\" are removed automatically.'
+    silent put ='GPG: Data after recipients between and including \"(\" and \")\" is ignored.'
+    silent put ='GPG: Closing this buffer commits changes.'
     silent put ='GPG: ----------------------------------------------------------------------'
 
     " get the recipients
@@ -649,6 +653,7 @@ function s:GPGEditRecipients()
       highlight link GPGUnknownRecipient  GPGHighlightUnknownRecipient
 
       syntax match GPGComment "^GPG:.*$"
+      exec 'syntax match GPGComment "' . s:GPGMagicString . '.*$"'
       highlight clear GPGComment
       highlight link GPGComment Comment
     endif
@@ -688,9 +693,13 @@ function s:GPGFinishRecipientsBuffer()
   let recipients = []
   let lines = getline(1,"$")
   for recipient in lines
+    " delete all text after magic string
+    let recipient = substitute(recipient, s:GPGMagicString . ".*$", "", "")
+
     " delete all spaces at beginning and end of the recipient
     " also delete a '!' at the beginning of the recipient
     let recipient = substitute(recipient, "^[[:space:]!]*\\(.\\{-}\\)[[:space:]]*$", "\\1", "")
+
     " delete comment lines
     let recipient = substitute(recipient, "^GPG:.*$", "", "")
 
@@ -808,11 +817,11 @@ function s:GPGEditOptions()
     silent put ='GPG: ----------------------------------------------------------------------'
     silent put ='GPG: THERE IS NO CHECK OF THE ENTERED OPTIONS!'
     silent put ='GPG: YOU NEED TO KNOW WHAT YOU ARE DOING!'
-    silent put ='GPG: IF IN DOUBT, QUICKLY EXIT USING :x OR :bd'
-    silent put ='GPG: Please edit the list of options, one option per line'
-    silent put ='GPG: Please refer to the gpg documentation for valid options'
-    silent put ='GPG: Lines beginning with \"GPG:\" are removed automatically'
-    silent put ='GPG: Closing this buffer commits changes'
+    silent put ='GPG: IF IN DOUBT, QUICKLY EXIT USING :x OR :bd.'
+    silent put ='GPG: Please edit the list of options, one option per line.'
+    silent put ='GPG: Please refer to the gpg documentation for valid options.'
+    silent put ='GPG: Lines beginning with \"GPG:\" are removed automatically.'
+    silent put ='GPG: Closing this buffer commits changes.'
     silent put ='GPG: ----------------------------------------------------------------------'
 
     " put the options in the scratch buffer
@@ -939,7 +948,6 @@ function s:GPGNameToID(name)
 
   " parse the output of gpg
   let pubseen = 0
-  let uidseen = 0
   let counter = 0
   let gpgids = []
   let choices = "The name \"" . a:name . "\" is ambiguous. Please select the correct key:\n"
@@ -948,15 +956,8 @@ function s:GPGNameToID(name)
     " search for the next uid
     if (pubseen == 1)
       if (fields[0] == "uid")
-        if (uidseen == 0)
-          let choices = choices . counter . ": " . fields[9] . "\n"
-          let counter = counter+1
-          let uidseen = 1
-        else
-          let choices = choices . "   " . fields[9] . "\n"
-        endif
+        let choices = choices . "   " . fields[9] . "\n"
       else
-        let uidseen = 0
         let pubseen = 0
       endif
     endif
@@ -964,7 +965,14 @@ function s:GPGNameToID(name)
     " search for the next pub
     if (pubseen == 0)
       if (fields[0] == "pub")
-        let gpgids += [fields[4]]
+        let identity = fields[4]
+        let gpgids += [identity]
+        if exists("*strftime")
+          let choices = choices . counter . ": ID: 0x" . identity . " created at " . strftime("%c", fields[5]) . "\n"
+        else
+          let choices = choices . counter . ": ID: 0x" . identity . "\n"
+        endif
+        let counter = counter+1
         let pubseen = 1
       endif
     endif
@@ -1017,7 +1025,11 @@ function s:GPGIDToName(identity)
     else " search for the next uid
       if (fields[0] == "uid")
         let pubseen = 0
-        let uid = fields[9]
+        if exists("*strftime")
+          let uid = fields[9] . s:GPGMagicString . "(ID: 0x" . a:identity . " created at " . strftime("%c", fields[5]) . ")"
+        else
+          let uid = fields[9] . s:GPGMagicString . "(ID: 0x" . a:identity . ")"
+        endif
         break
       endif
     endif
