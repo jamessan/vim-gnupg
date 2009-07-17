@@ -192,7 +192,7 @@ function s:GPGInit()
     let g:GPGPreferSign = 0
   endif
 
-  " check if debugging is turned on
+  " start with empty default recipients if none is defined so far
   if (!exists("g:GPGDefaultRecipients"))
     let g:GPGDefaultRecipients = []
   endif
@@ -1043,7 +1043,7 @@ endfunction
 " output debug message, if this message has high enough importance
 function s:GPGDebug(level, text)
   if (g:GPGDebugLevel >= a:level)
-    echom a:text
+    echom "GnuPG: " . a:text
   endif
 endfunction
 
