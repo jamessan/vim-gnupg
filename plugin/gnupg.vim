@@ -1,12 +1,14 @@
-" Name: gnupg.vim
-" Version:  $Id$
-" Author:   Markus Braun <markus.braun@krawel.de>
-" Summary:  Vim plugin for transparent editing of gpg encrypted files.
-" Licence:  This program is free software; you can redistribute it and/or
-"           modify it under the terms of the GNU General Public License.
-"           See http://www.gnu.org/copyleft/gpl.txt
+" Name:    gnupg.vim
+" Version: $Id$
+" Author:  Markus Braun <markus.braun@krawel.de>
+" Summary: Vim plugin for transparent editing of gpg encrypted files.
+" Licence: This program is free software; you can redistribute it and/or
+"          modify it under the terms of the GNU General Public License.
+"          See http://www.gnu.org/copyleft/gpl.txt
+"
 " Section: Documentation {{{1
-" Description:
+"
+" Description: {{{2
 "
 "   This script implements transparent editing of gpg encrypted files. The
 "   filename must have a ".gpg", ".pgp" or ".asc" suffix. When opening such
@@ -15,7 +17,7 @@
 "   encrypted to all recipients before it is written. The script turns off
 "   viminfo and swapfile to increase security.
 "
-" Installation:
+" Installation: {{{2
 "
 "   Copy the gnupg.vim file to the $HOME/.vim/plugin directory.
 "   Refer to ':help add-plugin', ':help add-global-plugin' and ':help
@@ -34,7 +36,7 @@
 "   put of the tty command. For W32 systems this option is not required.
 "   ...
 "
-" Commands:
+" Commands: {{{2
 "
 "   :GPGEditRecipients
 "     Opens a scratch buffer to change the list of recipients. Recipients that
@@ -53,7 +55,7 @@
 "   :GPGViewOptions
 "     Prints the list of options.
 "
-" Variables:
+" Variables: {{{2
 "
 "   g:GPGExecutable
 "     If set used as gpg executable, otherwise the system chooses what is run
@@ -75,7 +77,7 @@
 "     If set, these recipients are used as defaults when no other recipient is
 "     defined. This variable is a Vim list. Default is unset.
 "
-" Known Issues:
+" Known Issues: {{{2
 "
 "   In some cases gvim can't decryt files
 
@@ -97,7 +99,7 @@
 "         you will get a popup window the first time you open a file that
 "         needs to be decrypted.
 "
-" Credits:
+" Credits: {{{2
 "
 "   - Mathieu Clabaut for inspirations through his vimspell.vim script.
 "   - Richard Bronosky for patch to enable ".pgp" suffix.
@@ -113,18 +115,21 @@
 "   - Tim Swast for patch to generate signed files
 "
 " Section: Plugin header {{{1
+
+" guard against multiple loads {{{2
+if (exists("g:loaded_gnupg") || &cp || exists("#BufReadPre#*.\(gpg\|asc\|pgp\)"))
+  finish
+endif
+let g:loaded_gnupg = "$Revision$"
+
+" check for correct vim version {{{2
 if (v:version < 700)
   echohl ErrorMsg | echo 'plugin gnupg.vim requires Vim version >= 7.0' | echohl None
   finish
 endif
 
-if (exists("g:loaded_gnupg") || &cp || exists("#BufReadPre#*.\(gpg\|asc\|pgp\)"))
-  finish
-endif
-
-let g:loaded_gnupg = "$Revision$"
-
 " Section: Autocmd setup {{{1
+
 augroup GnuPG
   autocmd!
 
@@ -147,14 +152,17 @@ augroup GnuPG
 augroup END
 
 " Section: Constants {{{1
+
 let s:GPGMagicString = "\t \t"
 
 " Section: Highlight setup {{{1
+
 highlight default link GPGWarning WarningMsg
 highlight default link GPGError ErrorMsg
 highlight default link GPGHighlightUnknownRecipient ErrorMsg
 
 " Section: Functions {{{1
+
 " Function: s:GPGInit() {{{2
 "
 " initialize the plugin
@@ -670,6 +678,7 @@ endfunction
 " Function: s:GPGFinishRecipientsBuffer() {{{2
 "
 " create a new recipient list from RecipientsBuffer
+"
 function s:GPGFinishRecipientsBuffer()
   " guard for unencrypted files
   if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
@@ -849,6 +858,7 @@ endfunction
 " Function: s:GPGFinishOptionsBuffer() {{{2
 "
 " create a new option list from OptionsBuffer
+"
 function s:GPGFinishOptionsBuffer()
   " guard for unencrypted files
   if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
@@ -899,6 +909,7 @@ endfunction
 "
 " check if recipients are known
 " Returns: two lists recipients and unknownrecipients
+"
 function s:GPGCheckRecipients(tocheck)
   let recipients = []
   let unknownrecipients = []
@@ -931,6 +942,7 @@ endfunction
 "
 " find GPG key ID corresponding to a name
 " Returns: ID for the given name
+"
 function s:GPGNameToID(name)
   " ask gpg for the id for a name
   let &shellredir = s:shellredir
@@ -996,6 +1008,7 @@ endfunction
 "
 " find name corresponding to a GPG key ID
 " Returns: Name for the given ID
+"
 function s:GPGIDToName(identity)
   " TODO is the encryption subkey really unique?
 
@@ -1041,18 +1054,22 @@ endfunction
 " Function: s:GPGDebug(level, text) {{{2
 "
 " output debug message, if this message has high enough importance
+"
 function s:GPGDebug(level, text)
   if (g:GPGDebugLevel >= a:level)
     echom "GnuPG: " . a:text
   endif
 endfunction
 
-" Section: Command definitions {{{1
+" Section: Commands {{{1
+
 command! GPGViewRecipients call s:GPGViewRecipients()
 command! GPGEditRecipients call s:GPGEditRecipients()
 command! GPGViewOptions call s:GPGViewOptions()
 command! GPGEditOptions call s:GPGEditOptions()
+
 " Section: Menu {{{1
+
 if (has("menu"))
   amenu <silent> Plugin.GnuPG.View\ Recipients :GPGViewRecipients<CR>
   amenu <silent> Plugin.GnuPG.Edit\ Recipients :GPGEditRecipients<CR>
