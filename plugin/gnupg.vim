@@ -414,9 +414,9 @@ function s:GPGEncrypt()
   set bin
 
   " guard for unencrypted files
-  if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
-    echohl GPGWarning
-    echom "File is not encrypted, all GPG functions disabled!"
+  if (!exists("b:GPGEncrypted") || b:GPGEncrypted == 0)
+    echohl GPGError
+    let blackhole = input("Message could not be encrypted! File might be empty! (Press ENTER)")
     echohl None
     return
   endif
