@@ -168,6 +168,8 @@ highlight default link GPGHighlightUnknownRecipient ErrorMsg
 " initialize the plugin
 "
 function s:GPGInit()
+  call s:GPGDebug(3, ">>>>>>>> Entering s:GPGInit()")
+
   " first make sure nothing is written to ~/.viminfo while editing
   " an encrypted file.
   set viminfo=
@@ -203,11 +205,6 @@ function s:GPGInit()
   " start with empty default recipients if none is defined so far
   if (!exists("g:GPGDefaultRecipients"))
     let g:GPGDefaultRecipients = []
-  endif
-
-  " check if debugging is turned on
-  if (!exists("g:GPGDebugLevel"))
-    let g:GPGDebugLevel = 0
   endif
 
   " print version
@@ -254,16 +251,25 @@ function s:GPGInit()
   endif
 
   " find the supported algorithms
+  let GPGExec = s:GPGCommand . " --version"
+  call s:GPGDebug(2, "command: ". GPGExec)
   let &shellredir = s:shellredir
   let &shell = s:shell
-  let output = system(s:GPGCommand . " --version")
+  let output = system(GPGExec)
   let &shellredir = s:shellredirsave
   let &shell = s:shellsave
+  call s:GPGDebug(2, "output: ". output)
 
   let s:GPGPubkey = substitute(output, ".*Pubkey: \\(.\\{-}\\)\n.*", "\\1", "")
   let s:GPGCipher = substitute(output, ".*Cipher: \\(.\\{-}\\)\n.*", "\\1", "")
   let s:GPGHash = substitute(output, ".*Hash: \\(.\\{-}\\)\n.*", "\\1", "")
-  let s:GPGCompress = substitute(output, ".*Compress: \\(.\\{-}\\)\n.*", "\\1", "")
+  let s:GPGCompress = substitute(output, ".*Compress.\\{-}: \\(.\\{-}\\)\n.*", "\\1", "")
+
+  call s:GPGDebug(2, "public key algorithms: " . s:GPGPubkey)
+  call s:GPGDebug(2, "cipher algorithms: " . s:GPGCipher)
+  call s:GPGDebug(2, "hashing algorithms: " . s:GPGHash)
+  call s:GPGDebug(2, "compression algorithms: " . s:GPGCompress)
+  call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGInit()")
 endfunction
 
 " Function: s:GPGCleanup() {{{2
@@ -271,9 +277,13 @@ endfunction
 " cleanup on leaving vim
 "
 function s:GPGCleanup()
+  call s:GPGDebug(3, ">>>>>>>> Entering s:GPGCleanup()")
+
   " wipe out screen
   new +only
   redraw!
+
+  call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGCleanup()")
 endfunction
 
 " Function: s:GPGDecrypt() {{{2
@@ -281,6 +291,8 @@ endfunction
 " decrypt the buffer and find all recipients of the encrypted file
 "
 function s:GPGDecrypt()
+  call s:GPGDebug(3, ">>>>>>>> Entering s:GPGDecrypt()")
+
   " switch to binary mode to read the encrypted file
   set bin
 
@@ -293,13 +305,14 @@ function s:GPGDecrypt()
   let b:GPGOptions = []
 
   " find the recipients of the file
+  let GPGExec = s:GPGCommand . " --verbose --decrypt --list-only --dry-run --batch --no-use-agent --logger-fd 1 \"" . filename . "\""
+  call s:GPGDebug(3, "command: " . GPGExec)
   let &shellredir = s:shellredir
   let &shell = s:shell
-  let output = system(s:GPGCommand . " --verbose --decrypt --list-only --dry-run --batch --no-use-agent --logger-fd 1 \"" . filename . "\"")
+  let output = system(GPGExec)
   let &shellredir = s:shellredirsave
   let &shell = s:shellsave
-  call s:GPGDebug(1, "output of command '" . s:GPGCommand . " --verbose --decrypt --list-only --dry-run --batch --no-use-agent --logger-fd 1 \"" . filename . "\"' is:")
-  call s:GPGDebug(1, ">>>>> " . output . " <<<<<")
+  call s:GPGDebug(3, "output: ". output)
 
   " check if the file is symmetric/asymmetric encrypted
   if (match(output, "gpg: encrypted with [[:digit:]]\\+ passphrase") >= 0)
@@ -353,6 +366,7 @@ function s:GPGDecrypt()
     echom "File is not encrypted, all GPG functions disabled!"
     echohl None
     set nobin
+    call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGDecrypt()")
     return
   endif
 
@@ -366,10 +380,11 @@ function s:GPGDecrypt()
   " since even with the --quiet option passphrase typos will be reported,
   " we must redirect stderr (using shell temporarily)
   call s:GPGDebug(1, "decrypting file")
-  call s:GPGDebug(1, "command is '[,']!" . s:GPGCommand . " --quiet --decrypt " . s:stderrredirnull)
+  let GPGExec = "'[,']!" . s:GPGCommand . " --quiet --decrypt " . s:stderrredirnull
+  call s:GPGDebug(1, "command: " . GPGExec)
   let &shellredir = s:shellredir
   let &shell = s:shell
-  exec "'[,']!" . s:GPGCommand . " --quiet --decrypt " . s:stderrredirnull
+  exec GPGExec
   let &shellredir = s:shellredirsave
   let &shell = s:shellsave
   if (v:shell_error) " message could not be decrypted
@@ -379,6 +394,7 @@ function s:GPGDecrypt()
     echohl None
     bwipeout
     set nobin
+    call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGDecrypt()")
     return
   endif
 
@@ -391,6 +407,8 @@ function s:GPGDecrypt()
 
   " refresh screen
   redraw!
+
+  call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGDecrypt()")
 endfunction
 
 " Function: s:GPGEncrypt() {{{2
@@ -398,6 +416,8 @@ endfunction
 " encrypts the buffer to all previous recipients
 "
 function s:GPGEncrypt()
+  call s:GPGDebug(3, ">>>>>>>> Entering s:GPGEncrypt()")
+
   " save window view
   let s:GPGWindowView = winsaveview()
   call s:GPGDebug(2, "saved window view " . string(s:GPGWindowView))
@@ -420,6 +440,7 @@ function s:GPGEncrypt()
     echohl GPGError
     let blackhole = input("Message could not be encrypted! File might be empty! (Press ENTER)")
     echohl None
+    call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGEncrypt()")
     return
   endif
 
@@ -477,12 +498,13 @@ function s:GPGEncrypt()
   endif
 
   " encrypt the buffer
+  let GPGExec = "'[,']!" . s:GPGCommand . " --quiet --no-encrypt-to " . options . " " . s:stderrredirnull
+  call s:GPGDebug(1, "command: " . GPGExec)
   let &shellredir = s:shellredir
   let &shell = s:shell
-  silent exec "'[,']!" . s:GPGCommand . " --quiet --no-encrypt-to " . options . " " . s:stderrredirnull
+  silent exec GPGExec
   let &shellredir = s:shellredirsave
   let &shell = s:shellsave
-  call s:GPGDebug(1, "called gpg command is: " . "'[,']!" . s:GPGCommand . " --quiet --no-encrypt-to " . options . " " . s:stderrredirnull)
   if (v:shell_error) " message could not be encrypted
     " delete content of the buffer to be sure no data is written unencrypted
     " content will be recovered in GPGEncryptPost()
@@ -491,9 +513,11 @@ function s:GPGEncrypt()
     echohl GPGError
     let blackhole = input("Message could not be encrypted! File might be empty! (Press ENTER)")
     echohl None
+    call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGEncrypt()")
     return
   endif
 
+  call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGEncrypt()")
 endfunction
 
 " Function: s:GPGEncryptPost() {{{2
@@ -501,8 +525,11 @@ endfunction
 " undo changes don by encrypt, after writing
 "
 function s:GPGEncryptPost()
+  call s:GPGDebug(3, ">>>>>>>> Entering s:GPGEncryptPost()")
+
   " guard for unencrypted files
   if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
+    call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGEncryptPost()")
     return
   endif
 
@@ -524,6 +551,8 @@ function s:GPGEncryptPost()
 
   " refresh screen
   redraw!
+
+  call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGEncryptPost()")
 endfunction
 
 " Function: s:GPGViewRecipients() {{{2
@@ -531,11 +560,14 @@ endfunction
 " echo the recipients
 "
 function s:GPGViewRecipients()
+  call s:GPGDebug(3, ">>>>>>>> Entering s:GPGViewRecipients()")
+
   " guard for unencrypted files
   if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
     echohl GPGWarning
     echom "File is not encrypted, all GPG functions disabled!"
     echohl None
+    call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGViewRecipients()")
     return
   endif
 
@@ -562,6 +594,8 @@ function s:GPGViewRecipients()
     echom 'There are no known recipients!'
     echohl None
   endif
+
+  call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGViewRecipients()")
 endfunction
 
 " Function: s:GPGEditRecipients() {{{2
@@ -569,11 +603,14 @@ endfunction
 " create a scratch buffer with all recipients to add/remove recipients
 "
 function s:GPGEditRecipients()
+  call s:GPGDebug(3, ">>>>>>>> Entering s:GPGEditRecipients()")
+
   " guard for unencrypted files
   if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
     echohl GPGWarning
     echom "File is not encrypted, all GPG functions disabled!"
     echohl None
+    call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGEditRecipients()")
     return
   endif
 
@@ -675,6 +712,8 @@ function s:GPGEditRecipients()
     silent normal! G
 
   endif
+
+  call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGEditRecipients()")
 endfunction
 
 " Function: s:GPGFinishRecipientsBuffer() {{{2
@@ -682,11 +721,14 @@ endfunction
 " create a new recipient list from RecipientsBuffer
 "
 function s:GPGFinishRecipientsBuffer()
+  call s:GPGDebug(3, ">>>>>>>> Entering s:GPGFinishRecipientsBuffer()")
+
   " guard for unencrypted files
   if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
     echohl GPGWarning
     echom "File is not encrypted, all GPG functions disabled!"
     echohl None
+    call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGFinishRecipientsBuffer()")
     return
   endif
 
@@ -747,6 +789,8 @@ function s:GPGFinishRecipientsBuffer()
 
   " reset modified flag
   set nomodified
+
+  call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGFinishRecipientsBuffer()")
 endfunction
 
 " Function: s:GPGViewOptions() {{{2
@@ -754,11 +798,14 @@ endfunction
 " echo the recipients
 "
 function s:GPGViewOptions()
+  call s:GPGDebug(3, ">>>>>>>> Entering s:GPGViewOptions()")
+
   " guard for unencrypted files
   if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
     echohl GPGWarning
     echom "File is not encrypted, all GPG functions disabled!"
     echohl None
+    call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGViewOptions()")
     return
   endif
 
@@ -769,6 +816,8 @@ function s:GPGViewOptions()
       echo option
     endfor
   endif
+
+  call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGViewOptions()")
 endfunction
 
 " Function: s:GPGEditOptions() {{{2
@@ -776,11 +825,14 @@ endfunction
 " create a scratch buffer with all recipients to add/remove recipients
 "
 function s:GPGEditOptions()
+  call s:GPGDebug(3, ">>>>>>>> Entering s:GPGEditOptions()")
+
   " guard for unencrypted files
   if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
     echohl GPGWarning
     echom "File is not encrypted, all GPG functions disabled!"
     echohl None
+    call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGEditOptions()")
     return
   endif
 
@@ -855,6 +907,8 @@ function s:GPGEditOptions()
       highlight link GPGComment Comment
     endif
   endif
+
+  call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGEditOptions()")
 endfunction
 
 " Function: s:GPGFinishOptionsBuffer() {{{2
@@ -862,11 +916,14 @@ endfunction
 " create a new option list from OptionsBuffer
 "
 function s:GPGFinishOptionsBuffer()
+  call s:GPGDebug(3, ">>>>>>>> Entering s:GPGFinishOptionsBuffer()")
+
   " guard for unencrypted files
   if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
     echohl GPGWarning
     echom "File is not encrypted, all GPG functions disabled!"
     echohl None
+    call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGFinishOptionsBuffer()")
     return
   endif
 
@@ -905,6 +962,8 @@ function s:GPGFinishOptionsBuffer()
 
   " reset modified flag
   set nomodified
+
+  call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGFinishOptionsBuffer()")
 endfunction
 
 " Function: s:GPGCheckRecipients(tocheck) {{{2
@@ -913,6 +972,8 @@ endfunction
 " Returns: two lists recipients and unknownrecipients
 "
 function s:GPGCheckRecipients(tocheck)
+  call s:GPGDebug(3, ">>>>>>>> Entering s:GPGCheckRecipients()")
+
   let recipients = []
   let unknownrecipients = []
 
@@ -937,6 +998,7 @@ function s:GPGCheckRecipients(tocheck)
   call s:GPGDebug(2, "recipients are: " . string(recipients))
   call s:GPGDebug(2, "unknown recipients are: " . string(unknownrecipients))
 
+  call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGCheckRecipients()")
   return [ recipients, unknownrecipients ]
 endfunction
 
@@ -946,12 +1008,17 @@ endfunction
 " Returns: ID for the given name
 "
 function s:GPGNameToID(name)
+  call s:GPGDebug(3, ">>>>>>>> Entering s:GPGNameToID()")
+
   " ask gpg for the id for a name
+  let GPGExec = s:GPGCommand . " --quiet --with-colons --fixed-list-mode --list-keys \"" . a:name . "\""
+  call s:GPGDebug(2, "command: ". GPGExec)
   let &shellredir = s:shellredir
   let &shell = s:shell
-  let output = system(s:GPGCommand . " --quiet --with-colons --fixed-list-mode --list-keys \"" . a:name . "\"")
+  let output = system(GPGExec)
   let &shellredir = s:shellredirsave
   let &shell = s:shellsave
+  call s:GPGDebug(2, "output: ". output)
 
   " when called with "--with-colons" gpg encodes its output _ALWAYS_ as UTF-8,
   " so convert it, if necessary
@@ -1003,6 +1070,7 @@ function s:GPGNameToID(name)
     endwhile
   endif
 
+  call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGIDToName()")
   return get(gpgids, answer, "")
 endfunction
 
@@ -1012,14 +1080,19 @@ endfunction
 " Returns: Name for the given ID
 "
 function s:GPGIDToName(identity)
+  call s:GPGDebug(3, ">>>>>>>> Entering s:GPGIDToName()")
+
   " TODO is the encryption subkey really unique?
 
   " ask gpg for the id for a name
+  let GPGExec = s:GPGCommand . " --quiet --with-colons --fixed-list-mode --list-keys " . a:identity
+  call s:GPGDebug(2, "command: ". GPGExec)
   let &shellredir = s:shellredir
   let &shell = s:shell
-  let output = system(s:GPGCommand . " --quiet --with-colons --fixed-list-mode --list-keys " . a:identity )
+  let output = system(GPGExec)
   let &shellredir = s:shellredirsave
   let &shell = s:shellsave
+  call s:GPGDebug(2, "output: ". output)
 
   " when called with "--with-colons" gpg encodes its output _ALWAYS_ as UTF-8,
   " so convert it, if necessary
@@ -1050,16 +1123,24 @@ function s:GPGIDToName(identity)
     endif
   endfor
 
+  call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGIDToName()")
   return uid
 endfunction
 
 " Function: s:GPGDebug(level, text) {{{2
 "
 " output debug message, if this message has high enough importance
+" only define function if GPGDebugLevel set at all
 "
 function s:GPGDebug(level, text)
-  if (g:GPGDebugLevel >= a:level)
-    echom "GnuPG: " . a:text
+  if exists("g:GPGDebugLevel") && g:GPGDebugLevel >= a:level
+    if exists("g:GPGDebugLog")
+      exec "redir >> " . g:GPGDebugLog
+      echom "GnuPG: " . a:text
+      redir END
+    else
+      echom "GnuPG: " . a:text
+    endif
   endif
 endfunction
 
