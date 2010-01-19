@@ -239,7 +239,7 @@ function s:GPGInit()
   let s:shellsave = &shell
   if (has("unix"))
     " unix specific settings
-    let s:shellredir = &shellredir
+    let s:shellredir = ">%s 2>&1"
     let s:shell = '/bin/sh'
     let s:stderrredirnull = '2>/dev/null'
     let s:GPGCommand = "LANG=C LC_ALL=C " . s:GPGCommand
