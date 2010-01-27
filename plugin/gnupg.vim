@@ -36,6 +36,9 @@
 "   put of the tty command. For W32 systems this option is not required.
 "   ...
 "
+"   Most distributions provide software to ease handling of gpg and gpg-agent.
+"   Examples are keychain or seahorse.
+"
 " Commands: {{{2
 "
 "   :GPGEditRecipients
