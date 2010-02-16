@@ -131,6 +131,10 @@ if (v:version < 700)
   echohl ErrorMsg | echo 'plugin gnupg.vim requires Vim version >= 7.0' | echohl None
   finish
 endif
+if !(exists("*shellescape") && exists("*fnameescape"))
+  echohl ErrorMsg | echo 'plugin gnupg.vim requires Vim with the shellescape() and fnameescape() functions' | echohl None
+  finish
+endif
 
 " Section: Autocmd setup {{{1
 
@@ -317,7 +321,7 @@ function s:GPGDecrypt()
   set bin
 
   " get the filename of the current buffer
-  let filename = escape(expand("%:p"), '\"')
+  let filename = expand("%:p")
 
   " clear GPGEncrypted, GPGRecipients and GPGOptions
   let b:GPGEncrypted = 0
@@ -325,7 +329,7 @@ function s:GPGDecrypt()
   let b:GPGOptions = []
 
   " find the recipients of the file
-  let commandline = s:GPGCommand . " --verbose --decrypt --list-only --dry-run --batch --no-use-agent --logger-fd 1 \"" . filename . "\""
+  let commandline = s:GPGCommand . " --verbose --decrypt --list-only --dry-run --batch --no-use-agent --logger-fd 1 " . shellescape(filename)
   call s:GPGDebug(3, "command: " . commandline)
   let &shellredir = s:shellredir
   let &shell = s:shell
@@ -422,8 +426,8 @@ function s:GPGDecrypt()
   set nobin
 
   " call the autocommand for the file minus .gpg$
-  execute ":doautocmd BufReadPost " . escape(expand("%:r"), ' *?\"'."'")
-  call s:GPGDebug(2, "called autocommand for " . escape(expand("%:r"), ' *?\"'."'"))
+  execute ":doautocmd BufReadPost " . fnameescape(expand("%:r"))
+  call s:GPGDebug(2, "called autocommand for " . fnameescape(expand("%:r")))
 
   " refresh screen
   redraw!
@@ -644,7 +648,7 @@ function s:GPGEditRecipients()
     " check if this buffer exists
     if (!bufexists(editbuffername))
       " create scratch buffer
-      execute 'silent! split ' . escape(editbuffername, ' *?\"'."'")
+      execute 'silent! split ' . fnameescape(editbuffername)
 
       " add a autocommand to regenerate the recipients after a write
       autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishRecipientsBuffer()
@@ -654,7 +658,7 @@ function s:GPGEditRecipients()
         execute 'silent! ' . bufwinnr(editbuffername) . "wincmd w"
       else
         " split scratch buffer window
-        execute 'silent! sbuffer ' . escape(editbuffername, ' *?\"'."'")
+        execute 'silent! sbuffer ' . fnameescape(editbuffername)
 
         " add a autocommand to regenerate the recipients after a write
         autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishRecipientsBuffer()
@@ -708,7 +712,7 @@ function s:GPGEditRecipients()
     let syntaxPattern = "\\(nonexxistinwordinthisbuffer"
     for name in unknownrecipients
       let name = "!" . name
-      let syntaxPattern = syntaxPattern . "\\|" . name
+      let syntaxPattern = syntaxPattern . "\\|" . fnameescape(name)
       silent put =name
     endfor
     let syntaxPattern = syntaxPattern . "\\)"
@@ -866,7 +870,7 @@ function s:GPGEditOptions()
     " check if this buffer exists
     if (!bufexists(editbuffername))
       " create scratch buffer
-      execute 'silent! split ' . escape(editbuffername, ' *?\"'."'")
+      execute 'silent! split ' . fnameescape(editbuffername)
 
       " add a autocommand to regenerate the options after a write
       autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishOptionsBuffer()
@@ -876,7 +880,7 @@ function s:GPGEditOptions()
         execute 'silent! ' . bufwinnr(editbuffername) . "wincmd w"
       else
         " split scratch buffer window
-        execute 'silent! sbuffer ' . escape(editbuffername, ' *?\"'."'")
+        execute 'silent! sbuffer ' . fnameescape(editbuffername)
 
         " add a autocommand to regenerate the options after a write
         autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishOptionsBuffer()
@@ -1031,7 +1035,7 @@ function s:GPGNameToID(name)
   call s:GPGDebug(3, ">>>>>>>> Entering s:GPGNameToID()")
 
   " ask gpg for the id for a name
-  let commandline = s:GPGCommand . " --quiet --with-colons --fixed-list-mode --list-keys \"" . a:name . "\""
+  let commandline = s:GPGCommand . " --quiet --with-colons --fixed-list-mode --list-keys " . shellescape(a:name)
   call s:GPGDebug(2, "command: ". commandline)
   let &shellredir = s:shellredir
   let &shell = s:shell
