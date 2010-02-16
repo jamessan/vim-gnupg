@@ -1051,8 +1051,16 @@ function s:GPGNameToID(name)
   let pubseen = 0
   let counter = 0
   let gpgids = []
+  let duplicates = {}
   let choices = "The name \"" . a:name . "\" is ambiguous. Please select the correct key:\n"
   for line in lines
+    if !has_key(duplicates, line)
+      let duplicates[line] = 1
+    else
+      " Exact line has already been seen.  Probably multiple keyrings being
+      " searched with the same data.
+      continue
+    endif
     let fields = split(line, ":")
     " search for the next uid
     if (pubseen == 1)
@@ -1090,7 +1098,7 @@ function s:GPGNameToID(name)
     endwhile
   endif
 
-  call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGIDToName()")
+  call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGNameToID()")
   return get(gpgids, answer, "")
 endfunction
 
