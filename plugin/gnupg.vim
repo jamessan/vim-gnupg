@@ -71,7 +71,8 @@
 "     If set to 1 symmetric encryption is preferred for new files. Defaults to 0.
 "
 "   g:GPGPreferArmor
-"     If set to 1 armored data is preferred for new files. Defaults to 0.
+"     If set to 1 armored data is preferred for new files. Defaults to 0
+"     unless a "*.asc" file is being edited.
 "
 "   g:GPGPreferSign
 "     If set to 1 signed data is preferred for new files. Defaults to 0.
@@ -82,7 +83,7 @@
 "
 " Known Issues: {{{2
 "
-"   In some cases gvim can't decryt files
+"   In some cases gvim can't decrypt files
 
 "   This is caused by the fact that a running gvim has no TTY and thus gpg is
 "   not able to ask for the passphrase by itself. This is a problem for Windows
@@ -197,7 +198,12 @@ function s:GPGInit()
 
   " check if armored files are preferred
   if (!exists("g:GPGPreferArmor"))
-    let g:GPGPreferArmor = 0
+    " .asc files should be armored as that's what the extension is used for
+    if expand('<afile>') =~ '\.asc$'
+      let g:GPGPreferArmor = 1
+    else
+      let g:GPGPreferArmor = 0
+    endif
   endif
 
   " check if signed files are preferred
