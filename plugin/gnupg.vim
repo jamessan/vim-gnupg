@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Version: $Id: gnupg.vim 3026 2010-01-27 08:18:04Z mbr $
+" Version: $Id: gnupg.vim 3051 2010-02-16 07:56:18Z mbr $
 " Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
 " Licence: This program is free software; you can redistribute it and/or
@@ -71,7 +71,8 @@
 "     If set to 1 symmetric encryption is preferred for new files. Defaults to 0.
 "
 "   g:GPGPreferArmor
-"     If set to 1 armored data is preferred for new files. Defaults to 0.
+"     If set to 1 armored data is preferred for new files. Defaults to 0
+"     unless a "*.asc" file is being edited.
 "
 "   g:GPGPreferSign
 "     If set to 1 signed data is preferred for new files. Defaults to 0.
@@ -82,7 +83,7 @@
 "
 " Known Issues: {{{2
 "
-"   In some cases gvim can't decryt files
+"   In some cases gvim can't decrypt files
 
 "   This is caused by the fact that a running gvim has no TTY and thus gpg is
 "   not able to ask for the passphrase by itself. This is a problem for Windows
@@ -109,13 +110,15 @@
 "   - Erik Remmelzwaal for patch to enable windows support and patient beta
 "     testing.
 "   - Lars Becker for patch to make gpg2 working.
-"   - Thomas Arendsen Hein for patch to convert encoding of gpg output
+"   - Thomas Arendsen Hein for patch to convert encoding of gpg output.
 "   - Karl-Heinz Ruskowski for patch to fix unknown recipients and trust model
 "     and patient beta testing.
 "   - Giel van Schijndel for patch to get GPG_TTY dynamically.
 "   - Sebastian Luettich for patch to fix issue with symmetric encryption an set
 "     recipients.
-"   - Tim Swast for patch to generate signed files
+"   - Tim Swast for patch to generate signed files.
+"   - James Vega for patches for better '*.asc' handling, better filename
+"     escaping and better handling of multiple keyrings.
 "
 " Section: Plugin header {{{1
 
@@ -123,11 +126,15 @@
 if (exists("g:loaded_gnupg") || &cp || exists("#BufReadPre#*.\(gpg\|asc\|pgp\)"))
   finish
 endif
-let g:loaded_gnupg = "$Revision: 3026 $"
+let g:loaded_gnupg = "$Revision: 3051 $"
 
 " check for correct vim version {{{2
 if (v:version < 700)
   echohl ErrorMsg | echo 'plugin gnupg.vim requires Vim version >= 7.0' | echohl None
+  finish
+endif
+if !(exists("*shellescape") && exists("*fnameescape"))
+  echohl ErrorMsg | echo 'plugin gnupg.vim requires Vim with the shellescape() and fnameescape() functions' | echohl None
   finish
 endif
 
@@ -197,7 +204,12 @@ function s:GPGInit()
 
   " check if armored files are preferred
   if (!exists("g:GPGPreferArmor"))
-    let g:GPGPreferArmor = 0
+    " .asc files should be armored as that's what the extension is used for
+    if expand('<afile>') =~ '\.asc$'
+      let g:GPGPreferArmor = 1
+    else
+      let g:GPGPreferArmor = 0
+    endif
   endif
 
   " check if signed files are preferred
@@ -230,10 +242,10 @@ function s:GPGInit()
     let s:GPGCommand = g:GPGExecutable . " --no-use-agent"
   endif
 
-  " don't use tty in gvim
+  " don't use tty in gvim except for windows: we get their a tty for free.
   " FIXME find a better way to avoid an error.
   "       with this solution only --use-agent will work
-  if (has("gui_running"))
+  if (has("gui_running") && !has("gui_win32"))
     let s:GPGCommand = s:GPGCommand . " --no-tty"
   endif
 
@@ -311,7 +323,7 @@ function s:GPGDecrypt()
   set bin
 
   " get the filename of the current buffer
-  let filename = escape(expand("%:p"), '\"')
+  let filename = expand("%:p")
 
   " clear GPGEncrypted, GPGRecipients and GPGOptions
   let b:GPGEncrypted = 0
@@ -319,7 +331,7 @@ function s:GPGDecrypt()
   let b:GPGOptions = []
 
   " find the recipients of the file
-  let commandline = s:GPGCommand . " --verbose --decrypt --list-only --dry-run --batch --no-use-agent --logger-fd 1 \"" . filename . "\""
+  let commandline = s:GPGCommand . " --verbose --decrypt --list-only --dry-run --batch --no-use-agent --logger-fd 1 " . shellescape(filename)
   call s:GPGDebug(3, "command: " . commandline)
   let &shellredir = s:shellredir
   let &shell = s:shell
@@ -416,8 +428,8 @@ function s:GPGDecrypt()
   set nobin
 
   " call the autocommand for the file minus .gpg$
-  execute ":doautocmd BufReadPost " . escape(expand("%:r"), ' *?\"'."'")
-  call s:GPGDebug(2, "called autocommand for " . escape(expand("%:r"), ' *?\"'."'"))
+  execute ":doautocmd BufReadPost " . fnameescape(expand("%:r"))
+  call s:GPGDebug(2, "called autocommand for " . fnameescape(expand("%:r")))
 
   " refresh screen
   redraw!
@@ -638,7 +650,7 @@ function s:GPGEditRecipients()
     " check if this buffer exists
     if (!bufexists(editbuffername))
       " create scratch buffer
-      execute 'silent! split ' . escape(editbuffername, ' *?\"'."'")
+      execute 'silent! split ' . fnameescape(editbuffername)
 
       " add a autocommand to regenerate the recipients after a write
       autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishRecipientsBuffer()
@@ -648,7 +660,7 @@ function s:GPGEditRecipients()
         execute 'silent! ' . bufwinnr(editbuffername) . "wincmd w"
       else
         " split scratch buffer window
-        execute 'silent! sbuffer ' . escape(editbuffername, ' *?\"'."'")
+        execute 'silent! sbuffer ' . fnameescape(editbuffername)
 
         " add a autocommand to regenerate the recipients after a write
         autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishRecipientsBuffer()
@@ -702,7 +714,7 @@ function s:GPGEditRecipients()
     let syntaxPattern = "\\(nonexxistinwordinthisbuffer"
     for name in unknownrecipients
       let name = "!" . name
-      let syntaxPattern = syntaxPattern . "\\|" . name
+      let syntaxPattern = syntaxPattern . "\\|" . fnameescape(name)
       silent put =name
     endfor
     let syntaxPattern = syntaxPattern . "\\)"
@@ -860,7 +872,7 @@ function s:GPGEditOptions()
     " check if this buffer exists
     if (!bufexists(editbuffername))
       " create scratch buffer
-      execute 'silent! split ' . escape(editbuffername, ' *?\"'."'")
+      execute 'silent! split ' . fnameescape(editbuffername)
 
       " add a autocommand to regenerate the options after a write
       autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishOptionsBuffer()
@@ -870,7 +882,7 @@ function s:GPGEditOptions()
         execute 'silent! ' . bufwinnr(editbuffername) . "wincmd w"
       else
         " split scratch buffer window
-        execute 'silent! sbuffer ' . escape(editbuffername, ' *?\"'."'")
+        execute 'silent! sbuffer ' . fnameescape(editbuffername)
 
         " add a autocommand to regenerate the options after a write
         autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishOptionsBuffer()
@@ -1025,7 +1037,7 @@ function s:GPGNameToID(name)
   call s:GPGDebug(3, ">>>>>>>> Entering s:GPGNameToID()")
 
   " ask gpg for the id for a name
-  let commandline = s:GPGCommand . " --quiet --with-colons --fixed-list-mode --list-keys \"" . a:name . "\""
+  let commandline = s:GPGCommand . " --quiet --with-colons --fixed-list-mode --list-keys " . shellescape(a:name)
   call s:GPGDebug(2, "command: ". commandline)
   let &shellredir = s:shellredir
   let &shell = s:shell
@@ -1045,30 +1057,37 @@ function s:GPGNameToID(name)
   let pubseen = 0
   let counter = 0
   let gpgids = []
+  let duplicates = {}
   let choices = "The name \"" . a:name . "\" is ambiguous. Please select the correct key:\n"
   for line in lines
-    let fields = split(line, ":")
-    " search for the next uid
-    if (pubseen == 1)
-      if (fields[0] == "uid")
-        let choices = choices . "   " . fields[9] . "\n"
-      else
-        let pubseen = 0
-      endif
-    endif
 
-    " search for the next pub
-    if (pubseen == 0)
-      if (fields[0] == "pub")
-        let identity = fields[4]
-        let gpgids += [identity]
-        if exists("*strftime")
-          let choices = choices . counter . ": ID: 0x" . identity . " created at " . strftime("%c", fields[5]) . "\n"
+    " check if this line has already been processed
+    if !has_key(duplicates, line)
+      let duplicates[line] = 1
+
+      let fields = split(line, ":")
+      " search for the next uid
+      if (pubseen == 1)
+        if (fields[0] == "uid")
+          let choices = choices . "   " . fields[9] . "\n"
         else
-          let choices = choices . counter . ": ID: 0x" . identity . "\n"
+          let pubseen = 0
         endif
-        let counter = counter+1
-        let pubseen = 1
+      endif
+
+      " search for the next pub
+      if (pubseen == 0)
+        if (fields[0] == "pub")
+          let identity = fields[4]
+          let gpgids += [identity]
+          if exists("*strftime")
+            let choices = choices . counter . ": ID: 0x" . identity . " created at " . strftime("%c", fields[5]) . "\n"
+          else
+            let choices = choices . counter . ": ID: 0x" . identity . "\n"
+          endif
+          let counter = counter+1
+          let pubseen = 1
+        endif
       endif
     endif
 
@@ -1084,7 +1103,7 @@ function s:GPGNameToID(name)
     endwhile
   endif
 
-  call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGIDToName()")
+  call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGNameToID()")
   return get(gpgids, answer, "")
 endfunction
 
