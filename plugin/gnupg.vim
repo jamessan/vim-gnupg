@@ -110,13 +110,15 @@
 "   - Erik Remmelzwaal for patch to enable windows support and patient beta
 "     testing.
 "   - Lars Becker for patch to make gpg2 working.
-"   - Thomas Arendsen Hein for patch to convert encoding of gpg output
+"   - Thomas Arendsen Hein for patch to convert encoding of gpg output.
 "   - Karl-Heinz Ruskowski for patch to fix unknown recipients and trust model
 "     and patient beta testing.
 "   - Giel van Schijndel for patch to get GPG_TTY dynamically.
 "   - Sebastian Luettich for patch to fix issue with symmetric encryption an set
 "     recipients.
-"   - Tim Swast for patch to generate signed files
+"   - Tim Swast for patch to generate signed files.
+"   - James Vega for patches for better '*.asc' handling, better filename
+"     escaping and better handling of multiple keyrings.
 "
 " Section: Plugin header {{{1
 
