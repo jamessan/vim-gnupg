@@ -1054,35 +1054,34 @@ function s:GPGNameToID(name)
   let duplicates = {}
   let choices = "The name \"" . a:name . "\" is ambiguous. Please select the correct key:\n"
   for line in lines
+
+    " check if this line has already been processed
     if !has_key(duplicates, line)
       let duplicates[line] = 1
-    else
-      " Exact line has already been seen.  Probably multiple keyrings being
-      " searched with the same data.
-      continue
-    endif
-    let fields = split(line, ":")
-    " search for the next uid
-    if (pubseen == 1)
-      if (fields[0] == "uid")
-        let choices = choices . "   " . fields[9] . "\n"
-      else
-        let pubseen = 0
-      endif
-    endif
 
-    " search for the next pub
-    if (pubseen == 0)
-      if (fields[0] == "pub")
-        let identity = fields[4]
-        let gpgids += [identity]
-        if exists("*strftime")
-          let choices = choices . counter . ": ID: 0x" . identity . " created at " . strftime("%c", fields[5]) . "\n"
+      let fields = split(line, ":")
+      " search for the next uid
+      if (pubseen == 1)
+        if (fields[0] == "uid")
+          let choices = choices . "   " . fields[9] . "\n"
         else
-          let choices = choices . counter . ": ID: 0x" . identity . "\n"
+          let pubseen = 0
         endif
-        let counter = counter+1
-        let pubseen = 1
+      endif
+
+      " search for the next pub
+      if (pubseen == 0)
+        if (fields[0] == "pub")
+          let identity = fields[4]
+          let gpgids += [identity]
+          if exists("*strftime")
+            let choices = choices . counter . ": ID: 0x" . identity . " created at " . strftime("%c", fields[5]) . "\n"
+          else
+            let choices = choices . counter . ": ID: 0x" . identity . "\n"
+          endif
+          let counter = counter+1
+          let pubseen = 1
+        endif
       endif
     endif
 
