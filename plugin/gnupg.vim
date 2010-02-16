@@ -240,10 +240,10 @@ function s:GPGInit()
     let s:GPGCommand = g:GPGExecutable . " --no-use-agent"
   endif
 
-  " don't use tty in gvim
+  " don't use tty in gvim except for windows: we get their a tty for free.
   " FIXME find a better way to avoid an error.
   "       with this solution only --use-agent will work
-  if (has("gui_running"))
+  if (has("gui_running") && !has("gui_win32"))
     let s:GPGCommand = s:GPGCommand . " --no-tty"
   endif
 
