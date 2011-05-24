@@ -1,10 +1,13 @@
 " Name:    gnupg.vim
-" Version: $Id: gnupg.vim 3051 2010-02-16 07:56:18Z mbr $
-" Author:  Markus Braun <markus.braun@krawel.de>
+" Last Change: 2011 May 24
+" Author:  James Vega <vega.james@gmail.com>
+" Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
-" Licence: This program is free software; you can redistribute it and/or
-"          modify it under the terms of the GNU General Public License.
-"          See http://www.gnu.org/copyleft/gpl.txt
+" License: This program is free software; you can redistribute it and/or
+"          modify it under the terms of the GNU General Public License
+"          as published by the Free Software Foundation; either version
+"          2 of the License, or (at your option) any later version.
+"          See http://www.gnu.org/copyleft/gpl-2.0.txt
 "
 " Section: Documentation {{{1
 "
