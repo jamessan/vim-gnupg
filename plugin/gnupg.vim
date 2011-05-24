@@ -130,12 +130,8 @@ let g:loaded_gnupg = "$Revision: 3051 $"
 let s:GPGInitRun = 0
 
 " check for correct vim version {{{2
-if (v:version < 700)
-  echohl ErrorMsg | echo 'plugin gnupg.vim requires Vim version >= 7.0' | echohl None
-  finish
-endif
-if !(exists("*shellescape") && exists("*fnameescape"))
-  echohl ErrorMsg | echo 'plugin gnupg.vim requires Vim with the shellescape() and fnameescape() functions' | echohl None
+if (v:version < 702)
+  echohl ErrorMsg | echo 'plugin gnupg.vim requires Vim version >= 7.2' | echohl None
   finish
 endif
 
