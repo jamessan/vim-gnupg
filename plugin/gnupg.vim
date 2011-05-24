@@ -247,6 +247,11 @@ function s:GPGInit()
   " setup shell environment for unix and windows
   let s:shellredirsave = &shellredir
   let s:shellsave = &shell
+  let s:shelltempsave = &shelltemp
+  " noshelltemp isn't currently supported on Windows, but it doesn't cause any
+  " errors and this future proofs us against requiring changes if Windows
+  " gains noshelltemp functionality
+  let s:shelltemp = 0
   if (has("unix"))
     " unix specific settings
     let s:shellredir = ">%s 2>&1"
@@ -262,6 +267,7 @@ function s:GPGInit()
 
   call s:GPGDebug(3, "shellredirsave: " . s:shellredirsave)
   call s:GPGDebug(3, "shellsave: " . s:shellsave)
+  call s:GPGDebug(3, "shelltempsave: " . s:shelltempsave)
 
   call s:GPGDebug(3, "shell: " . s:shell)
   call s:GPGDebug(3, "shellcmdflag: " . &shellcmdflag)
@@ -333,9 +339,11 @@ function s:GPGDecrypt()
   call s:GPGDebug(3, "command: " . commandline)
   let &shellredir = s:shellredir
   let &shell = s:shell
+  let &shelltemp = s:shelltemp
   let output = system(commandline)
   let &shellredir = s:shellredirsave
   let &shell = s:shellsave
+  let &shelltemp = s:shelltempsave
   call s:GPGDebug(3, "output: ". output)
 
   " check if the file is symmetric/asymmetric encrypted
@@ -408,9 +416,11 @@ function s:GPGDecrypt()
   call s:GPGDebug(1, "command: " . commandline)
   let &shellredir = s:shellredir
   let &shell = s:shell
+  let &shelltemp = s:shelltemp
   execute commandline
   let &shellredir = s:shellredirsave
   let &shell = s:shellsave
+  let &shelltemp = s:shelltempsave
   if (v:shell_error) " message could not be decrypted
     echohl GPGError
     let blackhole = input("Message could not be decrypted! (Press ENTER)")
@@ -516,9 +526,11 @@ function s:GPGEncrypt()
   call s:GPGDebug(1, "command: " . commandline)
   let &shellredir = s:shellredir
   let &shell = s:shell
+  let &shelltemp = s:shelltemp
   silent execute commandline
   let &shellredir = s:shellredirsave
   let &shell = s:shellsave
+  let &shelltemp = s:shelltempsave
 
   " restore encoding
   if (s:GPGEncoding != "")
