@@ -123,7 +123,7 @@
 " Section: Plugin header {{{1
 
 " guard against multiple loads {{{2
-if (exists("g:loaded_gnupg") || &cp || exists("#BufReadPre#*.\(gpg\|asc\|pgp\)"))
+if (exists("g:loaded_gnupg") || &cp || exists("#BufReadCmd*.\(gpg\|asc\|pgp\)"))
   finish
 endif
 let g:loaded_gnupg = "$Revision: 3051 $"
