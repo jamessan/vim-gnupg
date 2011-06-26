@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2011 May 24
+" Last Change: 2011 June 26
 " Author:  James Vega <vega.james@gmail.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -129,7 +129,7 @@
 if (exists("g:loaded_gnupg") || &cp || exists("#BufReadCmd*.\(gpg\|asc\|pgp\)"))
   finish
 endif
-let g:loaded_gnupg = "$Revision$"
+let g:loaded_gnupg = '2.0'
 let s:GPGInitRun = 0
 
 " check for correct vim version {{{2
@@ -173,17 +173,24 @@ highlight default link GPGHighlightUnknownRecipient ErrorMsg
 " initialize the plugin
 "
 function s:GPGInit()
+  call s:GPGDebug(3, ">>>>>>>> Entering s:GPGInit()")
+
+  " we don't want a swap file, as it writes unencrypted data to disk
+  setl noswapfile
+
+  " if persistent undo is present, disable it for this buffer
+  if exists('+undofile')
+    setl noundofile
+  endif
+
+  " the rest only has to be run once
   if s:GPGInitRun
     return
   endif
-  call s:GPGDebug(3, ">>>>>>>> Entering s:GPGInit()")
 
   " first make sure nothing is written to ~/.viminfo while editing
   " an encrypted file.
   set viminfo=
-
-  " we don't want a swap file, as it writes unencrypted data to disk
-  setl noswapfile
 
   " check what gpg command to use
   if (!exists("g:GPGExecutable"))
@@ -327,7 +334,7 @@ function s:GPGDecrypt()
   " get the filename of the current buffer
   let filename = expand("<afile>:p")
 
-  " File doesn't exist yet, so force recipients
+  " File doesn't exist yet, so nothing to decrypt
   if empty(glob(filename))
     return
   endif
