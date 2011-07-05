@@ -963,5 +963,11 @@ command! GPGViewRecipients call s:GPGViewRecipients()
 command! GPGEditRecipients call s:GPGEditRecipients()
 command! GPGViewOptions call s:GPGViewOptions()
 command! GPGEditOptions call s:GPGEditOptions()
-
+" Section: Menu {{{1
+if has("menu")
+  amenu <silent> Plugin.GnuPG.View\ Recipients :GPGViewRecipients<CR>
+  amenu <silent> Plugin.GnuPG.Edit\ Recipients :GPGEditRecipients<CR>
+  amenu <silent> Plugin.GnuPG.View\ Options :GPGViewOptions<CR>
+  amenu <silent> Plugin.GnuPG.Edit\ Options :GPGEditOptions<CR>
+endif
 " vim600: foldmethod=marker:foldlevel=0
