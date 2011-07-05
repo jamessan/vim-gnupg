@@ -121,12 +121,14 @@ fun s:GPGInit()
     " windows specific settings
     let s:shellredir = '>%s'
     let s:shell = &shell
-    let s:redirnull = '2>nul'
+    let s:stderrredir = '2>&1'
+    let s:stderrredirnull = '2>nul'
   else
     " unix specific settings
     let s:shellredir = &shellredir
     let s:shell = 'sh'
-    let s:redirnull ='2>/dev/null'
+    let s:stderrredir = '2>&1'
+    let s:stderrredirnull ='2>/dev/null'
   endi
 
   " find the supported algorithms
@@ -158,7 +160,7 @@ fun s:GPGDecrypt()
   " find the recipients of the file
   let &shellredir=s:shellredir
   let &shell=s:shell
-  let output=system(s:GPGCommand . " --decrypt --dry-run --batch " . filename)
+  let output=system(s:GPGCommand . " --decrypt --dry-run --batch --no-use-agent " . filename . " " . s:stderrredir)
   let &shellredir=s:shellredir
   let &shell=s:shellsave
 
@@ -209,7 +211,7 @@ fun s:GPGDecrypt()
   " we must redirect stderr (using shell temporarily)
   let &shellredir=s:shellredir
   let &shell=s:shell
-  exec "'[,']!" . s:GPGCommand . " --quiet --decrypt " . s:redirnull
+  exec "'[,']!" . s:GPGCommand . " --quiet --decrypt " . s:stderrredirnull
   let &shellredir=s:shellredir
   let &shell=s:shellsave
   if (v:shell_error) " message could not be decrypted
@@ -274,7 +276,7 @@ fun s:GPGEncrypt()
   " encrypt the buffer
   let &shellredir=s:shellredir
   let &shell=s:shell
-  silent exec "'[,']!" . s:GPGCommand . " --quiet --no-encrypt-to " . options . recipients . " " . s:redirnull
+  silent exec "'[,']!" . s:GPGCommand . " --quiet --no-encrypt-to " . options . recipients . " " . s:stderrredirnull
   let &shellredir=s:shellredir
   let &shell=s:shellsave
   if (v:shell_error) " message could not be encrypted
