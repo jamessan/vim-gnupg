@@ -42,6 +42,10 @@
 "
 " Variables:
 "
+"   g:GPGExecutable
+"     If set used as gpg executable, otherwise the system chooses what is run
+"     when "gpg" is called. Defaults to "gpg".
+"
 "   g:GPGUseAgent
 "     If set to 0 a possible available gpg-agent won't be used. Defaults to 1.
 "
@@ -52,11 +56,12 @@
 "     If set to 1 armored data is preferred for new files. Defaults to 0.
 "
 " Credits:
-"   Mathieu Clabaut for inspirations through his vimspell.vim script.
-"   Richard Bronosky for patch to enable ".pgp" suffix.
-"   Erik Remmelzwaal for patch to enable windows support and patient beta
+" - Mathieu Clabaut for inspirations through his vimspell.vim script.
+" - Richard Bronosky for patch to enable ".pgp" suffix.
+" - Erik Remmelzwaal for patch to enable windows support and patient beta
 "   testing.
-"   Lars Becker for patch to make gpg2 working.
+" - Lars Becker for patch to make gpg2 working.
+" - Thomas Arendsen Hein for patch to convert encoding of gpg output
 "
 " Section: Plugin header {{{1
 if (exists("g:loaded_gnupg") || &cp || exists("#BufReadPre#*.\(gpg\|asc\|pgp\)"))
@@ -102,6 +107,11 @@ fun s:GPGInit()
   " we don't want a swap file, as it writes unencrypted data to disk
   set noswapfile
 
+  " check what gpg command to use
+  if (!exists("g:GPGExecutable"))
+    let g:GPGExecutable = "gpg"
+  endif
+
   " check if gpg-agent is allowed
   if (!exists("g:GPGUseAgent"))
     let g:GPGUseAgent = 1
@@ -133,9 +143,9 @@ fun s:GPGInit()
       echo "gpg-agent might not work."
       echohl None
     endif
-    let s:GPGCommand="gpg --use-agent"
+    let s:GPGCommand=g:GPGExecutable . " --use-agent"
   else
-    let s:GPGCommand="gpg --no-use-agent"
+    let s:GPGCommand=g:GPGExecutable . " --no-use-agent"
   endif
 
   " don't use tty in gvim
