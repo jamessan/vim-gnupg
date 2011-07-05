@@ -839,6 +839,12 @@ fun s:GPGNameToID(name)
   let &shellredir=s:shellredirsave
   let &shell=s:shellsave
 
+  " when called with "--with-colons" gpg encodes its output _ALWAYS_ as UTF-8,
+  " so convert it, if necessary
+  if &encoding != "utf-8"
+    let output=iconv(output, "utf-8", &encoding)
+  endi
+
   " parse the output of gpg
   let pub_seen=0
   let uid_seen=0
@@ -902,6 +908,12 @@ fun s:GPGIDToName(identity)
   let output=system(s:GPGCommand . " --quiet --with-colons --fixed-list-mode --list-keys " . a:identity )
   let &shellredir=s:shellredirsave
   let &shell=s:shellsave
+
+  " when called with "--with-colons" gpg encodes its output _ALWAYS_ as UTF-8,
+  " so convert it, if necessary
+  if &encoding != "utf-8"
+    let output=iconv(output, "utf-8", &encoding)
+  endi
 
   " parse the output of gpg
   let pub_seen=0
