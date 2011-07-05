@@ -37,7 +37,7 @@
 "     WARNING: There is no check of the entered options, so you need to know
 "     what you are doing.
 "
-"   :GPGViewRecipients
+"   :GPGViewOptions
 "     Prints the list of options.
 "
 " Variables:
@@ -48,7 +48,8 @@
 " Credits:
 "   Mathieu Clabaut for inspirations through his vimspell.vim script.
 "   Richard Bronosky for patch to enable ".pgp" suffix.
-"   Erik Remmelzwaal for patch to enable windows support.
+"   Erik Remmelzwaal for patch to enable windows support and patient beta
+"   testing.
 "
 " Section: Plugin header {{{1
 if (exists("loaded_gnupg") || &cp || exists("#BufReadPre#*.\(gpg\|asc\|pgp\)"))
