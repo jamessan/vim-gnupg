@@ -229,6 +229,7 @@ function s:GPGDecrypt()
 
     let b:GPGOptions+=["symmetric"]
 
+    " find the used cipher algorithm
     let cipher=substitute(output, ".*gpg: \\([^ ]\\+\\) encrypted data.*", "\\1", "")
     if (match(s:GPGCipher, "\\<" . cipher . "\\>") >= 0)
       let b:GPGOptions+=["cipher-algo " . cipher]
@@ -246,6 +247,7 @@ function s:GPGDecrypt()
 
     let b:GPGOptions+=["encrypt"]
 
+    " find the used public keys
     let start=match(output, "gpg: public key is [[:xdigit:]]\\{8}")
     while (start >= 0)
       let start=start + strlen("gpg: public key is ")
@@ -258,7 +260,7 @@ function s:GPGDecrypt()
       else
         let b:GPGUnknownRecipients+=[recipient]
         echohl GPGWarning
-        echom "The recipient " . recipient . " is not in your public keyring!"
+        echom "The recipient \"" . recipient . "\" is not in your public keyring!"
         echohl None
       end
       let start=match(output, "gpg: public key is [[:xdigit:]]\\{8}", start)
@@ -291,7 +293,7 @@ function s:GPGDecrypt()
   if (v:shell_error) " message could not be decrypted
     silent u
     echohl GPGError
-    let asd=input("Message could not be decrypted! (Press ENTER)")
+    let blackhole=input("Message could not be decrypted! (Press ENTER)")
     echohl None
     bwipeout
     set nobin
@@ -339,11 +341,7 @@ function s:GPGEncrypt()
     return
   endif
 
-  let options=""
-  let recipients=""
-  let field=0
-
-  " built list of options
+  " initialize GPGOptions if not happened before
   if (!exists("b:GPGOptions") || len(b:GPGOptions) == 0)
     let b:GPGOptions=[]
     if (exists("g:GPGPreferSymmetric") && g:GPGPreferSymmetric == 1)
@@ -356,52 +354,35 @@ function s:GPGEncrypt()
     endif
     call s:GPGDebug(1, "no options set, so using default options: " . string(b:GPGOptions))
   endif
+
+  " built list of options
+  let options=""
   for option in b:GPGOptions
     let options=options . " --" . option . " "
   endfor
 
-  let GPGUnknownRecipients=[]
-
-  " Check recipientslist for unknown recipients again
-  for cur_recipient in b:GPGRecipients
-    " only do this if the line is not empty
-    if (strlen(cur_recipient) > 0)
-      let gpgid=s:GPGNameToID(cur_recipient)
-      if (strlen(gpgid) <= 0)
-        let GPGUnknownRecipients+=[cur_recipient]
-        echohl GPGWarning
-        echom "The recipient " . cur_recipient . " is not in your public keyring!"
-        echohl None
-      endif
-    endif
+  " check recipientslist for unknown recipients again
+  for recipient in b:GPGUnknownRecipients
+    echohl GPGWarning
+    echom "The recipient \"" . recipient . "\" is not in your public keyring!"
+    echohl None
   endfor
 
   " check if there are unknown recipients and warn
-  if(len(GPGUnknownRecipients) > 0)
+  if(len(b:GPGUnknownRecipients) > 0)
     echohl GPGWarning
     echom "There are unknown recipients!!"
     echom "Please use GPGEditRecipients to correct!!"
     echo
     echohl None
-    call s:GPGDebug(1, "unknown recipients are: " . join(GPGUnknownRecipients, " "))
-
-    " Remove unknown recipients from recipientslist
-    let unknown_recipients=join(GPGUnknownRecipients, " ")
-    let index=0
-    while index < len(b:GPGRecipients)
-      if match(unknown_recipients, b:GPGRecipients[index])
-        echohl GPGWarning
-        echom "Removing ". b:GPGRecipients[index] ." from recipientlist!\n"
-        echohl None
-        call remove(b:GPGRecipients, index)
-      endif
-    endwhile
+    call s:GPGDebug(1, "unknown recipients are: " . join(b:GPGUnknownRecipients, " "))
 
     " Let user know whats happend and copy known_recipients back to buffer
     let dummy=input("Press ENTER to quit")
   endif
 
   " built list of recipients
+  let recipients=""
   if (exists("b:GPGRecipients") && len(b:GPGRecipients) > 0)
     call s:GPGDebug(1, "recipients are: " . join(b:GPGRecipients, " "))
     for gpgid in b:GPGRecipients
@@ -427,7 +408,7 @@ function s:GPGEncrypt()
   if (v:shell_error) " message could not be encrypted
     silent u
     echohl GPGError
-    let asd=input("Message could not be encrypted! File might be empty! (Press ENTER)")
+    let blackhole=input("Message could not be encrypted! File might be empty! (Press ENTER)")
     echohl None
     bwipeout
     return
@@ -440,7 +421,7 @@ endfunction
 " undo changes don by encrypt, after writing
 "
 function s:GPGEncryptPost()
-
+  " guard for unencrypted files
   if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
     return
   endif
@@ -486,7 +467,7 @@ function s:GPGViewRecipients()
       echo name
     endfor
 
-    " put the unknown recipients in the scratch buffer
+    " echo the unknown recipients
     echohl GPGWarning
     for name in b:GPGUnknownRecipients
       let name="!" . name
@@ -555,7 +536,7 @@ function s:GPGEditRecipients()
     setlocal nonumber
 
     " so we know for which other buffer this edit buffer is
-    let b:corresponding_to=buffername
+    let b:GPGCorrespondingTo=buffername
 
     " put some comments to the scratch buffer
     silent put ='GPG: ----------------------------------------------------------------------'
@@ -566,30 +547,28 @@ function s:GPGEditRecipients()
     silent put ='GPG: ----------------------------------------------------------------------'
 
     " put the recipients in the scratch buffer
-    let recipients=getbufvar(b:corresponding_to, "GPGRecipients")
+    let recipients=getbufvar(b:GPGCorrespondingTo, "GPGRecipients")
     if (type(recipients) != type([]))
       unlet recipients
       let recipients=[]
     endif
-
     for name in recipients
       let name=s:GPGIDToName(name)
       silent put =name
     endfor
 
     " put the unknown recipients in the scratch buffer
-    let unknownRecipients=getbufvar(b:corresponding_to, "GPGUnknownRecipients")
-    if (type(unknownRecipients) != type([]))
-      unlet unknownRecipients
-      let unknownRecipients=[]
+    let unknownrecipients=getbufvar(b:GPGCorrespondingTo, "GPGUnknownRecipients")
+    if (type(unknownrecipients) != type([]))
+      unlet unknownrecipients
+      let unknownrecipients=[]
     endif
-    let syntaxPattern="\\(nonexistingwordinthisbuffer"
-    for name in unknownRecipients
+    let syntaxPattern="\\(nonexxistinwordinthisbuffer"
+    for name in unknownrecipients
       let name="!" . name
       let syntaxPattern=syntaxPattern . "\\|" . name
       silent put =name
     endfor
-
     let syntaxPattern=syntaxPattern . "\\)"
 
     " define highlight
@@ -630,10 +609,6 @@ function s:GPGFinishRecipientsBuffer()
     execute 'silent! ' . bufwinnr(expand("<afile>")) . "wincmd w"
   endif
 
-  " clear GPGRecipients and GPGUnknownRecipients
-  let GPGRecipients=[]
-  let GPGUnknownRecipients=[]
-
   " delete the autocommand
   autocmd! * <buffer>
 
@@ -641,6 +616,8 @@ function s:GPGFinishRecipientsBuffer()
   let recipient=getline(currentline)
 
   " get the recipients from the scratch buffer
+  let recipients=[]
+  let unknownrecipients=[]
   while (currentline <= line("$"))
     " delete all spaces at beginning and end of the line
     " also delete a '!' at the beginning of the line
@@ -652,14 +629,14 @@ function s:GPGFinishRecipientsBuffer()
     if (strlen(recipient) > 0)
       let gpgid=s:GPGNameToID(recipient)
       if (strlen(gpgid) > 0)
-        if (match(GPGRecipients, gpgid) < 0)
-          let GPGRecipients+=[gpgid]
+        if (match(recipients, gpgid) < 0)
+          let recipients+=[gpgid]
         endif
       else
-        if (match(GPGUnknownRecipients, recipient) < 0)
-          let GPGUnknownRecipients+=[recipient]
+        if (match(unknownrecipients, recipient) < 0)
+          let unknownrecipients+=[recipient]
           echohl GPGWarning
-          echom "The recipient " . recipient . " is not in your public keyring!"
+          echom "The recipient \"" . recipient . "\" is not in your public keyring!"
           echohl None
         endif
       end
@@ -671,13 +648,13 @@ function s:GPGFinishRecipientsBuffer()
 
   " write back the new recipient list to the corresponding buffer and mark it
   " as modified. Buffer is now for sure a encrypted buffer.
-  call setbufvar(b:corresponding_to, "GPGRecipients", GPGRecipients)
-  call setbufvar(b:corresponding_to, "GPGUnknownRecipients", GPGUnknownRecipients)
-  call setbufvar(b:corresponding_to, "&mod", 1)
-  call setbufvar(b:corresponding_to, "GPGEncrypted", 1)
+  call setbufvar(b:GPGCorrespondingTo, "GPGRecipients", recipients)
+  call setbufvar(b:GPGCorrespondingTo, "GPGUnknownRecipients", unknownrecipients)
+  call setbufvar(b:GPGCorrespondingTo, "&mod", 1)
+  call setbufvar(b:GPGCorrespondingTo, "GPGEncrypted", 1)
 
   " check if there is any known recipient
-  if (len(GPGRecipients) == 0)
+  if (len(recipients) == 0)
     echohl GPGError
     echom 'There are no known recipients!'
     echohl None
@@ -760,7 +737,7 @@ function s:GPGEditOptions()
     setlocal nonumber
 
     " so we know for which other buffer this edit buffer is
-    let b:corresponding_to=buffername
+    let b:GPGCorrespondingTo=buffername
 
     " put some comments to the scratch buffer
     silent put ='GPG: ----------------------------------------------------------------------'
@@ -774,7 +751,7 @@ function s:GPGEditOptions()
     silent put ='GPG: ----------------------------------------------------------------------'
 
     " put the options in the scratch buffer
-    let options=getbufvar(b:corresponding_to, "GPGOptions")
+    let options=getbufvar(b:GPGCorrespondingTo, "GPGOptions")
 
     for option in options
       silent put =option
@@ -813,9 +790,9 @@ function s:GPGFinishOptionsBuffer()
     execute 'silent! ' . bufwinnr(expand("<afile>")) . "wincmd w"
   endif
 
-  " clear GPGOptions and GPGUnknownOptions
-  let GPGOptions=[]
-  let GPGUnknownOptions=[]
+  " clear options and unknownOptions
+  let options=[]
+  let unknownOptions=[]
 
   " delete the autocommand
   autocmd! * <buffer>
@@ -832,8 +809,8 @@ function s:GPGFinishOptionsBuffer()
     let option=substitute(option, "^GPG:.*$", "", "")
 
     " only do this if the line is not empty
-    if (strlen(option) > 0 && match(GPGOptions, option) < 0)
-      let GPGOptions+=[option]
+    if (strlen(option) > 0 && match(options, option) < 0)
+      let options+=[option]
     endif
 
     let currentline=currentline+1
@@ -842,8 +819,8 @@ function s:GPGFinishOptionsBuffer()
 
   " write back the new option list to the corresponding buffer and mark it
   " as modified
-  call setbufvar(b:corresponding_to, "GPGOptions", GPGOptions)
-  call setbufvar(b:corresponding_to, "&mod", 1)
+  call setbufvar(b:GPGCorrespondingTo, "GPGOptions", options)
+  call setbufvar(b:GPGCorrespondingTo, "&mod", 1)
 
   " reset modified flag
   set nomodified
@@ -869,34 +846,34 @@ function s:GPGNameToID(name)
   let lines=split(output, "\n")
 
   " parse the output of gpg
-  let pub_seen=0
-  let uid_seen=0
+  let pubseen=0
+  let uidseen=0
   let counter=0
   let gpgids=[]
   let choices="The name \"" . a:name . "\" is ambiguous. Please select the correct key:\n"
   for line in lines
     let fields=split(line, ":")
     " search for the next uid
-    if (pub_seen == 1)
+    if (pubseen == 1)
       if (fields[0] == "uid")
-        if (uid_seen == 0)
+        if (uidseen == 0)
           let choices=choices . counter . ": " . fields[9] . "\n"
           let counter=counter+1
-          let uid_seen=1
+          let uidseen=1
         else
           let choices=choices . "   " . fields[9] . "\n"
         endif
       else
-        let uid_seen=0
-        let pub_seen=0
+        let uidseen=0
+        let pubseen=0
       endif
     endif
 
     " search for the next pub
-    if (pub_seen == 0)
+    if (pubseen == 0)
       if (fields[0] == "pub")
         let gpgids+=[fields[4]]
-        let pub_seen=1
+        let pubseen=1
       endif
     endif
 
@@ -937,17 +914,17 @@ function s:GPGIDToName(identity)
   let lines=split(output, "\n")
 
   " parse the output of gpg
-  let pub_seen=0
+  let pubseen=0
   let uid=""
   for line in lines
     let fields=split(line, ":")
-    if (pub_seen == 0) " search for the next pub
+    if (pubseen == 0) " search for the next pub
       if (fields[0] == "pub")
-        let pub_seen=1
+        let pubseen=1
       endif
     else " search for the next uid
       if (fields[0] == "uid")
-        let pub_seen=0
+        let pubseen=0
         let uid=fields[9]
         break
       endif
