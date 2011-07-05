@@ -193,7 +193,7 @@ fun s:GPGDecrypt()
   " find the recipients of the file
   let &shellredir=s:shellredir
   let &shell=s:shell
-  let output=system(s:GPGCommand . " --verbose --decrypt --dry-run --batch --no-use-agent --passphrase \"ThisIsHopefullyNotThePassphraseOfAnyone\" --logger-fd 1 \"" . filename . "\"")
+  let output=system(s:GPGCommand . " --verbose --decrypt --list-only --dry-run --batch --no-use-agent --logger-fd 1 \"" . filename . "\"")
   let &shellredir=s:shellredirsave
   let &shell=s:shellsave
   call s:GPGDebug(1, "output of command '" . s:GPGCommand . " --verbose --decrypt --list-only --dry-run --batch --no-use-agent --logger-fd 1 \"" . filename . "\"' is:")
