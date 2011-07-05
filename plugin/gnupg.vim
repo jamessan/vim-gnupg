@@ -117,7 +117,7 @@ fun s:GPGInit()
   " setup shell environment for unix and windows
   let s:shellredirsave=&shellredir
   let s:shellsave=&shell
-  if (match(&shell,"cmd.exe"))
+  if (match(&shell,"\\(cmd\\|command\\).exe") >= 0)
     " windows specific settings
     let s:shellredir = '>%s'
     let s:shell = &shell
