@@ -67,7 +67,7 @@
 "
 " Section: Plugin header {{{1
 if v:version < 700
-  echohl ErrorMsg | echo 'plugin gnupg.vim requires Vim version >= 7' | echohl None
+  echohl ErrorMsg | echo 'plugin gnupg.vim requires Vim version >= 7.0' | echohl None
   finish
 endif
 
@@ -169,7 +169,7 @@ function s:GPGInit()
   " setup shell environment for unix and windows
   let s:shellredirsave=&shellredir
   let s:shellsave=&shell
-  if (match(&shell,"\\(cmd\\|command\\).exe") >= 0)
+  if (match(&shell,"\\(cmd\\|command\\).execute") >= 0)
     " windows specific settings
     let s:shellredir = '>%s'
     let s:shell = &shell
@@ -204,7 +204,7 @@ function s:GPGDecrypt()
   set bin
 
   " get the filename of the current buffer
-  let filename=escape(expand("%:p"), '\"')
+  let filename=fnameescape(expand("%:p"))
 
   " clear GPGEncrypted, GPGRecipients, GPGUnknownRecipients and GPGOptions
   let b:GPGEncrypted=0
@@ -302,8 +302,8 @@ function s:GPGDecrypt()
   set nobin
 
   " call the autocommand for the file minus .gpg$
-  execute ":doautocmd BufReadPost " . escape(expand("%:r"), ' *?\"'."'")
-  call s:GPGDebug(2, "called autocommand for " . escape(expand("%:r"), ' *?\"'."'"))
+  execute ":doautocmd BufReadPost " . fnameescape(expand("%:r"))
+  call s:GPGDebug(2, "called autocommand for " . fnameescape(expand("%:r")))
 
   " refresh screen
   redraw!
@@ -526,17 +526,17 @@ function s:GPGEditRecipients()
     " check if this buffer exists
     if (!bufexists(editbuffername))
       " create scratch buffer
-      exe 'silent! split ' . escape(editbuffername, ' *?\"'."'")
+      execute 'silent! split ' . fnameescape(editbuffername)
 
       " add a autocommand to regenerate the recipients after a write
       autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishRecipientsBuffer()
     else
       if (bufwinnr(editbuffername) >= 0)
         " switch to scratch buffer window
-        exe 'silent! ' . bufwinnr(editbuffername) . "wincmd w"
+        execute 'silent! ' . bufwinnr(editbuffername) . "wincmd w"
       else
         " split scratch buffer window
-        exe 'silent! sbuffer ' . escape(editbuffername, ' *?\"'."'")
+        execute 'silent! sbuffer ' . fnameescape(editbuffername)
 
         " add a autocommand to regenerate the recipients after a write
         autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishRecipientsBuffer()
@@ -627,7 +627,7 @@ function s:GPGFinishRecipientsBuffer()
   " go to buffer before doing work
   if (bufnr("%") != expand("<abuf>"))
     " switch to scratch buffer window
-    exe 'silent! ' . bufwinnr(expand("<afile>")) . "wincmd w"
+    execute 'silent! ' . bufwinnr(expand("<afile>")) . "wincmd w"
   endif
 
   " clear GPGRecipients and GPGUnknownRecipients
@@ -732,17 +732,17 @@ function s:GPGEditOptions()
     " check if this buffer exists
     if (!bufexists(editbuffername))
       " create scratch buffer
-      exe 'silent! split ' . escape(editbuffername, ' *?\"'."'")
+      execute 'silent! split ' . fnameescape(editbuffername)
 
       " add a autocommand to regenerate the options after a write
       autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishOptionsBuffer()
     else
       if (bufwinnr(editbuffername) >= 0)
         " switch to scratch buffer window
-        exe 'silent! ' . bufwinnr(editbuffername) . "wincmd w"
+        execute 'silent! ' . bufwinnr(editbuffername) . "wincmd w"
       else
         " split scratch buffer window
-        exe 'silent! sbuffer ' . escape(editbuffername, ' *?\"'."'")
+        execute 'silent! sbuffer ' . fnameescape(editbuffername)
 
         " add a autocommand to regenerate the options after a write
         autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishOptionsBuffer()
@@ -810,7 +810,7 @@ function s:GPGFinishOptionsBuffer()
   " go to buffer before doing work
   if (bufnr("%") != expand("<abuf>"))
     " switch to scratch buffer window
-    exe 'silent! ' . bufwinnr(expand("<afile>")) . "wincmd w"
+    execute 'silent! ' . bufwinnr(expand("<afile>")) . "wincmd w"
   endif
 
   " clear GPGOptions and GPGUnknownOptions
