@@ -644,12 +644,16 @@ fun s:GPGFinishRecipientsBuffer()
     if (strlen(recipient) > 0)
       let gpgid=s:GPGNameToID(recipient)
       if (strlen(gpgid) > 0)
-        let GPGRecipients+=[gpgid]
+        if (match(GPGRecipients, gpgid) < 0)
+          let GPGRecipients+=[gpgid]
+        endi
       else
-        let GPGUnknownRecipients+=[recipient]
-        echohl GPGWarning
-        echom "The recipient " . recipient . " is not in your public keyring!"
-        echohl None
+        if (match(GPGUnknownRecipients, recipient) < 0)
+          let GPGUnknownRecipients+=[recipient]
+          echohl GPGWarning
+          echom "The recipient " . recipient . " is not in your public keyring!"
+          echohl None
+        endi
       end
     endi
 
@@ -820,7 +824,7 @@ fun s:GPGFinishOptionsBuffer()
     let option=substitute(option, "^GPG:.*$", "", "")
 
     " only do this if the line is not empty
-    if (strlen(option) > 0)
+    if (strlen(option) > 0 && match(GPGOptions, option) < 0)
       let GPGOptions+=[option]
     endi
 
