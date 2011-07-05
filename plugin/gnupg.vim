@@ -240,7 +240,7 @@ function s:GPGInit()
   if (has("unix"))
     " unix specific settings
     let s:shellredir = &shellredir
-    let s:shell = 'sh'
+    let s:shell = '/bin/sh'
     let s:stderrredirnull = '2>/dev/null'
     let s:GPGCommand = "LANG=C LC_ALL=C " . s:GPGCommand
   else
