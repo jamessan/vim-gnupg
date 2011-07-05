@@ -66,47 +66,42 @@ let g:loaded_gnupg = "$Revision$"
 
 " Section: Autocmd setup {{{1
 augroup GnuPG
-au!
+autocmd!
 
-" First make sure nothing is written to ~/.viminfo while editing
-" an encrypted file.
-autocmd BufNewFile,BufReadPre,FileReadPre      *.\(gpg\|asc\|pgp\) set viminfo=
-" We don't want a swap file, as it writes unencrypted data to disk
-autocmd BufNewFile,BufReadPre,FileReadPre      *.\(gpg\|asc\|pgp\) set noswapfile
-" Initialize the internal variables
+" initialize the internal variables
 autocmd BufNewFile,BufReadPre,FileReadPre      *.\(gpg\|asc\|pgp\) call s:GPGInit()
-" Force the user to edit the recipient list if he opens a new file and public
+" force the user to edit the recipient list if he opens a new file and public
 " keys are preferred
 autocmd BufNewFile                             *.\(gpg\|asc\|pgp\) if (exists("g:GPGPreferSymmetric") && g:GPGPreferSymmetric == 0) | call s:GPGEditRecipients() | endi
-" Switch to binary mode to read the encrypted file
-autocmd BufReadPre,FileReadPre                 *.\(gpg\|asc\|pgp\) set bin
+" do the decryption
 autocmd BufReadPost,FileReadPost               *.\(gpg\|asc\|pgp\) call s:GPGDecrypt()
-" Switch to normal mode for editing
-autocmd BufReadPost,FileReadPost               *.\(gpg\|asc\|pgp\) set nobin
-" Call the autocommand for the file minus .gpg$
-autocmd BufReadPost,FileReadPost               *.\(gpg\|asc\|pgp\) execute ":doautocmd BufReadPost " . escape(expand("%:r"), ' *?\"'."'")
-autocmd BufReadPost,FileReadPost               *.\(gpg\|asc\|pgp\) execute ":redraw!"
 
-" Switch to binary mode before encrypt the file
-autocmd BufWritePre,FileWritePre               *.\(gpg\|asc\|pgp\) set bin
-" Convert all text to encrypted text before writing
+" convert all text to encrypted text before writing
 autocmd BufWritePre,FileWritePre               *.\(gpg\|asc\|pgp\) call s:GPGEncrypt()
-" Undo the encryption so we are back in the normal text, directly
+" undo the encryption so we are back in the normal text, directly
 " after the file has been written.
-autocmd BufWritePost,FileWritePost             *.\(gpg\|asc\|pgp\) if (exists("b:GPGEncrypted") && b:GPGEncrypted == 1) | silent u | endi
-" Switch back to normal mode for editing
-autocmd BufWritePost,FileWritePost             *.\(gpg\|asc\|pgp\) set nobin
+autocmd BufWritePost,FileWritePost             *.\(gpg\|asc\|pgp\) call s:GPGEncryptPost()
+
 augroup END
+
 " Section: Highlight setup {{{1
 highlight default link GPGWarning WarningMsg
 highlight default link GPGError ErrorMsg
 highlight default link GPGHighlightUnknownRecipient ErrorMsg
+
 " Section: Functions {{{1
 " Function: s:GPGInit() {{{2
 "
 " initialize the plugin
 "
 fun s:GPGInit()
+  " first make sure nothing is written to ~/.viminfo while editing
+  " an encrypted file.
+  set viminfo=
+
+  " we don't want a swap file, as it writes unencrypted data to disk
+  set noswapfile
+
   " check if gpg-agent is allowed
   if (!exists("g:GPGUseAgent"))
     let g:GPGUseAgent = 1
@@ -181,6 +176,9 @@ endf
 " decrypt the buffer and find all recipients of the encrypted file
 "
 fun s:GPGDecrypt()
+  " switch to binary mode to read the encrypted file
+  set bin
+
   " get the filename of the current buffer
   let filename=escape(expand("%:p"), '\"')
 
@@ -248,6 +246,7 @@ fun s:GPGDecrypt()
     echohl GPGWarning
     echo "File is not encrypted, all GPG functions disabled!"
     echohl None
+    set nobin
     return
   endi
 
@@ -271,8 +270,19 @@ fun s:GPGDecrypt()
     let asd=input("Message could not be decrypted! (Press ENTER)")
     echohl None
     bwipeout
+    set nobin
     return
   endi
+
+  " turn off binary mode
+  set nobin
+
+  " call the autocommand for the file minus .gpg$
+  execute ":doautocmd BufReadPost " . escape(expand("%:r"), ' *?\"'."'")
+  call s:GPGDebug(2, "called autocommand for " . escape(expand("%:r"), ' *?\"'."'"))
+
+  " refresh screen
+  redraw!
 endf
 
 " Function: s:GPGEncrypt() {{{2
@@ -935,4 +945,4 @@ com! GPGEditRecipients call s:GPGEditRecipients()
 com! GPGViewOptions call s:GPGViewOptions()
 com! GPGEditOptions call s:GPGEditOptions()
 
-" vim600: set foldmethod=marker:
+" vim600: foldmethod=marker:foldlevel=0
