@@ -5,7 +5,7 @@
 " Licence:  This program is free software; you can redistribute it and/or
 "           modify it under the terms of the GNU General Public License.
 "           See http://www.gnu.org/copyleft/gpl.txt
-" Section:  Documentation {{{1
+" Section: Documentation {{{1
 " Description:
 "   
 "   This script implements transparent editing of gpg encrypted files. The
@@ -280,6 +280,13 @@ endf
 " encrypts the buffer to all previous recipients
 "
 fun s:GPGEncrypt()
+  " save cursor position
+  let s:GPGCursorPosition = getpos(".")
+  call s:GPGDebug(2, "saved cursor position " . string(s:GPGCursorPosition))
+
+  " switch buffer to binary mode
+  set bin
+
   " guard for unencrypted files
   if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
     echohl GPGWarning
@@ -358,6 +365,29 @@ fun s:GPGEncrypt()
     return
   endi
 
+endf
+
+" Function: s:GPGEncryptPost() {{{2
+"
+" undo changes don by encrypt, after writing
+"
+fun s:GPGEncryptPost()
+
+  if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
+    return
+  endi
+
+  " undo encryption of buffer content
+  silent u
+
+  " switch back from binary mode
+  set nobin
+
+  " restore cursor position
+  call setpos('.', s:GPGCursorPosition)
+  call s:GPGDebug(2, "restored cursor position " . string(s:GPGCursorPosition))
+
+  " refresh screen
   redraw!
 endf
 
