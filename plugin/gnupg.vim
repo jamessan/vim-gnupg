@@ -567,6 +567,10 @@ function s:GPGEditRecipients()
 
     " put the recipients in the scratch buffer
     let recipients=getbufvar(b:corresponding_to, "GPGRecipients")
+    if (type(recipients) != type([]))
+      unlet recipients
+      let recipients=[]
+    endif
 
     for name in recipients
       let name=s:GPGIDToName(name)
@@ -575,6 +579,10 @@ function s:GPGEditRecipients()
 
     " put the unknown recipients in the scratch buffer
     let unknownRecipients=getbufvar(b:corresponding_to, "GPGUnknownRecipients")
+    if (type(unknownRecipients) != type([]))
+      unlet unknownRecipients
+      let unknownRecipients=[]
+    endif
     let syntaxPattern="\\(nonexistingwordinthisbuffer"
     for name in unknownRecipients
       let name="!" . name
