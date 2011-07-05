@@ -122,6 +122,11 @@ fun s:GPGInit()
     let g:GPGPreferArmor = 0
   endif
 
+  " check if debugging is turned on
+  if (!exists("g:GPGDebugLevel"))
+    let g:GPGDebugLevel = 0
+  endif
+
   " determine if gnupg can use the gpg-agent
   if (exists("$GPG_AGENT_INFO") && g:GPGUseAgent == 1)
     if (!exists("$GPG_TTY"))
@@ -191,17 +196,21 @@ fun s:GPGDecrypt()
   let output=system(s:GPGCommand . " --verbose --decrypt --dry-run --batch --no-use-agent --passphrase \"ThisIsHopefullyNotThePassphraseOfAnyone\" --logger-fd 1 \"" . filename . "\"")
   let &shellredir=s:shellredirsave
   let &shell=s:shellsave
+  call s:GPGDebug(1, "output of command '" . s:GPGCommand . " --verbose --decrypt --list-only --dry-run --batch --no-use-agent --logger-fd 1 \"" . filename . "\"' is:")
+  call s:GPGDebug(1, ">>>>> " . output . " <<<<<")
 
   " check if the file is symmetric/asymmetric encrypted
   if (match(output, "gpg: encrypted with [[:digit:]]\\+ passphrase") >= 0)
     " file is symmetric encrypted
     let b:GPGEncrypted=1
+    call s:GPGDebug(1, "this file is symmetric encrypted")
 
     let b:GPGOptions=b:GPGOptions . "symmetric:"
 
     let cipher=substitute(output, ".*gpg: \\([^ ]\\+\\) encrypted data.*", "\\1", "")
     if (match(s:GPGCipher, "\\<" . cipher . "\\>") >= 0)
       let b:GPGOptions=b:GPGOptions . "cipher-algo " . cipher . ":"
+      call s:GPGDebug(1, "cipher-algo is " . cipher)
     else
       echohl GPGWarning
       echo "The cipher " . cipher . " is not known by the local gpg command. Using default!"
@@ -211,27 +220,31 @@ fun s:GPGDecrypt()
   elseif (match(output, "gpg: public key is [[:xdigit:]]\\{8}") >= 0)
     " file is asymmetric encrypted
     let b:GPGEncrypted=1
+    call s:GPGDebug(1, "this file is asymmetric encrypted")
 
     let b:GPGOptions=b:GPGOptions . "encrypt:"
 
-    let start=match(output, "ID [[:xdigit:]]\\{8}")
+    let start=match(output, "gpg: public key is [[:xdigit:]]\\{8}")
     while (start >= 0)
-      let start=start+3
+      let start=start + strlen("gpg: public key is ")
       let recipient=strpart(output, start, 8)
+      call s:GPGDebug(1, "recipient is " . recipient)
       let name=s:GPGNameToID(recipient)
       if (strlen(name) > 0)
 	let b:GPGRecipients=b:GPGRecipients . name . ":" 
+        call s:GPGDebug(1, "name of recipient is " . name)
       else
 	let b:GPGUnknownRecipients=b:GPGUnknownRecipients . recipient . ":" 
 	echohl GPGWarning
 	echo "The recipient " . recipient . " is not in your public keyring!"
 	echohl None
       end
-      let start=match(output, "ID [[:xdigit:]]\\{8}", start)
+      let start=match(output, "gpg: public key is [[:xdigit:]]\\{8}", start)
     endw
   else
     " file is not encrypted
     let b:GPGEncrypted=0
+    call s:GPGDebug(1, "this file is not encrypted")
     echohl GPGWarning
     echo "File is not encrypted, all GPG functions disabled!"
     echohl None
@@ -239,7 +252,8 @@ fun s:GPGDecrypt()
   endi
 
   " check if the message is armored
-  if (stridx(getline(1), "-----BEGIN PGP MESSAGE-----") >= 0)
+  if (match(output, "gpg: armor header") >= 0)
+    call s:GPGDebug(1, "this file is armored")
     let b:GPGOptions=b:GPGOptions . "armor:"
   endi
 
@@ -288,6 +302,7 @@ fun s:GPGEncrypt()
     if (exists("g:GPGPreferArmor") && g:GPGPreferArmor == 1)
       let b:GPGOptions=b:GPGOptions . "armor:"
     endi
+    call s:GPGDebug(1, "no options set, so using default options: " . b:GPGOptions)
   endi
   let field=0
   let option=s:GetField(b:GPGOptions, ":", field)
@@ -304,10 +319,12 @@ fun s:GPGEncrypt()
     echo "Please use GPGEditRecipients to correct!!"
     echo
     echohl None
+    call s:GPGDebug(1, "unknown recipients are: " . b:GPGUnknownRecipients)
   endi
 
   " built list of recipients
   if (exists("b:GPGRecipients") && strlen(b:GPGRecipients) > 0)
+    call s:GPGDebug(1, "recipients are: " . b:GPGRecipients)
     let field=0
     let gpgid=s:GetField(b:GPGRecipients, ":", field)
     while (strlen(gpgid))
@@ -331,6 +348,7 @@ fun s:GPGEncrypt()
   silent exec "'[,']!" . s:GPGCommand . " --quiet --no-encrypt-to " . options . recipients . " " . s:stderrredirnull
   let &shellredir=s:shellredirsave
   let &shell=s:shellsave
+  call s:GPGDebug(1, "called gpg command is: " . "'[,']!" . s:GPGCommand . " --quiet --no-encrypt-to " . options . recipients . " " . s:stderrredirnull)
   if (v:shell_error) " message could not be encrypted
     silent u
     echohl GPGError
@@ -340,7 +358,7 @@ fun s:GPGEncrypt()
     return
   endi
 
-  "redraw!
+  redraw!
 endf
 
 " Function: s:GPGViewRecipients() {{{2
@@ -871,6 +889,16 @@ fun s:GetField(line, separator, field)
     return ""
   endi
 endf
+
+" Function: s:GPGDebug(level, text) {{{2
+"
+" output debug message, if this message has high enough importance
+fun s:GPGDebug(level, text)
+  if (g:GPGDebugLevel >= a:level)
+    echom a:text
+  endi
+endf
+
 " Section: Command definitions {{{1
 com! GPGViewRecipients call s:GPGViewRecipients()
 com! GPGEditRecipients call s:GPGEditRecipients()
