@@ -408,7 +408,7 @@ fun s:GPGEncrypt()
       let recipients=recipients . " -r " . gpgid
     endfor
   else
-    if (match(join(b:GPGOptions, " "), "encrypt") >= 0)
+    if (match(b:GPGOptions, "encrypt") >= 0)
       echohl GPGError
       echom "There are no recipients!!"
       echom "Please use GPGEditRecipients to correct!!"
