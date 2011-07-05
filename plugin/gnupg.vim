@@ -250,12 +250,23 @@ function s:GPGInit()
     let s:stderrredirnull = '2>nul'
   endif
 
+  call s:GPGDebug(3, "shellredirsave: " . s:shellredirsave)
+  call s:GPGDebug(3, "shellsave: " . s:shellsave)
+
+  call s:GPGDebug(3, "shell: " . s:shell)
+  call s:GPGDebug(3, "shellcmdflag: " . &shellcmdflag)
+  call s:GPGDebug(3, "shellxquote: " . &shellxquote)
+  call s:GPGDebug(3, "shellredir: " . s:shellredir)
+  call s:GPGDebug(3, "stderrredirnull: " . s:stderrredirnull)
+
+  call s:GPGDebug(3, "shell implementation: " . resolve(s:shell))
+
   " find the supported algorithms
-  let GPGExec = s:GPGCommand . " --version"
-  call s:GPGDebug(2, "command: ". GPGExec)
+  let commandline = s:GPGCommand . " --version"
+  call s:GPGDebug(2, "command: ". commandline)
   let &shellredir = s:shellredir
   let &shell = s:shell
-  let output = system(GPGExec)
+  let output = system(commandline)
   let &shellredir = s:shellredirsave
   let &shell = s:shellsave
   call s:GPGDebug(2, "output: ". output)
@@ -305,11 +316,11 @@ function s:GPGDecrypt()
   let b:GPGOptions = []
 
   " find the recipients of the file
-  let GPGExec = s:GPGCommand . " --verbose --decrypt --list-only --dry-run --batch --no-use-agent --logger-fd 1 \"" . filename . "\""
-  call s:GPGDebug(3, "command: " . GPGExec)
+  let commandline = s:GPGCommand . " --verbose --decrypt --list-only --dry-run --batch --no-use-agent --logger-fd 1 \"" . filename . "\""
+  call s:GPGDebug(3, "command: " . commandline)
   let &shellredir = s:shellredir
   let &shell = s:shell
-  let output = system(GPGExec)
+  let output = system(commandline)
   let &shellredir = s:shellredirsave
   let &shell = s:shellsave
   call s:GPGDebug(3, "output: ". output)
@@ -380,11 +391,11 @@ function s:GPGDecrypt()
   " since even with the --quiet option passphrase typos will be reported,
   " we must redirect stderr (using shell temporarily)
   call s:GPGDebug(1, "decrypting file")
-  let GPGExec = "'[,']!" . s:GPGCommand . " --quiet --decrypt " . s:stderrredirnull
-  call s:GPGDebug(1, "command: " . GPGExec)
+  let commandline = "'[,']!" . s:GPGCommand . " --quiet --decrypt " . s:stderrredirnull
+  call s:GPGDebug(1, "command: " . commandline)
   let &shellredir = s:shellredir
   let &shell = s:shell
-  exec GPGExec
+  execute commandline
   let &shellredir = s:shellredirsave
   let &shell = s:shellsave
   if (v:shell_error) " message could not be decrypted
@@ -498,11 +509,11 @@ function s:GPGEncrypt()
   endif
 
   " encrypt the buffer
-  let GPGExec = "'[,']!" . s:GPGCommand . " --quiet --no-encrypt-to " . options . " " . s:stderrredirnull
-  call s:GPGDebug(1, "command: " . GPGExec)
+  let commandline = "'[,']!" . s:GPGCommand . " --quiet --no-encrypt-to " . options . " " . s:stderrredirnull
+  call s:GPGDebug(1, "command: " . commandline)
   let &shellredir = s:shellredir
   let &shell = s:shell
-  silent exec GPGExec
+  silent execute commandline
   let &shellredir = s:shellredirsave
   let &shell = s:shellsave
   if (v:shell_error) " message could not be encrypted
@@ -695,12 +706,12 @@ function s:GPGEditRecipients()
 
     " define highlight
     if (has("syntax") && exists("g:syntax_on"))
-      exec('syntax match GPGUnknownRecipient    "' . syntaxPattern . '"')
+      execute 'syntax match GPGUnknownRecipient    "' . syntaxPattern . '"'
       highlight clear GPGUnknownRecipient
       highlight link GPGUnknownRecipient  GPGHighlightUnknownRecipient
 
       syntax match GPGComment "^GPG:.*$"
-      exec 'syntax match GPGComment "' . s:GPGMagicString . '.*$"'
+      execute 'syntax match GPGComment "' . s:GPGMagicString . '.*$"'
       highlight clear GPGComment
       highlight link GPGComment Comment
     endif
@@ -1011,11 +1022,11 @@ function s:GPGNameToID(name)
   call s:GPGDebug(3, ">>>>>>>> Entering s:GPGNameToID()")
 
   " ask gpg for the id for a name
-  let GPGExec = s:GPGCommand . " --quiet --with-colons --fixed-list-mode --list-keys \"" . a:name . "\""
-  call s:GPGDebug(2, "command: ". GPGExec)
+  let commandline = s:GPGCommand . " --quiet --with-colons --fixed-list-mode --list-keys \"" . a:name . "\""
+  call s:GPGDebug(2, "command: ". commandline)
   let &shellredir = s:shellredir
   let &shell = s:shell
-  let output = system(GPGExec)
+  let output = system(commandline)
   let &shellredir = s:shellredirsave
   let &shell = s:shellsave
   call s:GPGDebug(2, "output: ". output)
@@ -1085,11 +1096,11 @@ function s:GPGIDToName(identity)
   " TODO is the encryption subkey really unique?
 
   " ask gpg for the id for a name
-  let GPGExec = s:GPGCommand . " --quiet --with-colons --fixed-list-mode --list-keys " . a:identity
-  call s:GPGDebug(2, "command: ". GPGExec)
+  let commandline = s:GPGCommand . " --quiet --with-colons --fixed-list-mode --list-keys " . a:identity
+  call s:GPGDebug(2, "command: ". commandline)
   let &shellredir = s:shellredir
   let &shell = s:shell
-  let output = system(GPGExec)
+  let output = system(commandline)
   let &shellredir = s:shellredirsave
   let &shell = s:shellsave
   call s:GPGDebug(2, "output: ". output)
@@ -1135,7 +1146,7 @@ endfunction
 function s:GPGDebug(level, text)
   if exists("g:GPGDebugLevel") && g:GPGDebugLevel >= a:level
     if exists("g:GPGDebugLog")
-      exec "redir >> " . g:GPGDebugLog
+      execute "redir >> " . g:GPGDebugLog
       echom "GnuPG: " . a:text
       redir END
     else
