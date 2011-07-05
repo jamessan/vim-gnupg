@@ -90,9 +90,9 @@ autocmd BufWritePost,FileWritePost             *.\(gpg\|asc\|pgp\) if (exists("b
 autocmd BufWritePost,FileWritePost             *.\(gpg\|asc\|pgp\) set nobin
 augroup END
 " Section: Highlight setup {{{1
-highlight default GPGWarning                   term=reverse ctermfg=Yellow guifg=Yellow
-highlight default GPGError                     term=reverse ctermfg=Red guifg=Red
-highlight default GPGHighlightUnknownRecipient term=reverse ctermfg=Red cterm=underline guifg=Red gui=underline
+highlight default link GPGWarning WarningMsg
+highlight default link GPGError ErrorMsg
+highlight default link GPGHighlightUnknownRecipient ErrorMsg
 " Section: Functions {{{1
 " Function: s:GPGInit() {{{2
 "
