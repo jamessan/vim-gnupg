@@ -1,6 +1,6 @@
 " Name:    gnupg.vim
-" Last Change: 2011 June 26
-" Author:  James Vega <vega.james@gmail.com>
+" Last Change: 2011 Aug 01
+" Maintainer:  James Vega <vega.james@gmail.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
 " License: This program is free software; you can redistribute it and/or
@@ -84,6 +84,11 @@
 "     If set, these recipients are used as defaults when no other recipient is
 "     defined. This variable is a Vim list. Default is unset.
 "
+"   g:GPGUsePipes
+"     If set to 1, use pipes instead of temporary files when interacting with
+"     gnupg.  When set to 1, this can cause terminal-based gpg agents to not
+"     display correctly when prompting for passwords.  Defaults to 0.
+"
 " Known Issues: {{{2
 "
 "   In some cases gvim can't decrypt files
@@ -129,7 +134,7 @@
 if (exists("g:loaded_gnupg") || &cp || exists("#BufReadCmd*.\(gpg\|asc\|pgp\)"))
   finish
 endif
-let g:loaded_gnupg = '2.0'
+let g:loaded_gnupg = '2.1'
 let s:GPGInitRun = 0
 
 " check for correct vim version {{{2
@@ -227,6 +232,11 @@ function s:GPGInit()
     let g:GPGDefaultRecipients = []
   endif
 
+  " prefer not to use pipes since it can garble gpg agent display
+  if (!exists("g:GPGUsePipes"))
+    let g:GPGUsePipes = 0
+  endif
+
   " print version
   call s:GPGDebug(1, "gnupg.vim ". g:loaded_gnupg)
 
@@ -261,7 +271,7 @@ function s:GPGInit()
   " noshelltemp isn't currently supported on Windows, but it doesn't cause any
   " errors and this future proofs us against requiring changes if Windows
   " gains noshelltemp functionality
-  let s:shelltemp = 0
+  let s:shelltemp = !g:GPGUsePipes
   if (has("unix"))
     " unix specific settings
     let s:shellredir = ">%s 2>&1"
