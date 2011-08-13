@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2011 Aug 01
+" Last Change: 2011 Aug 13
 " Maintainer:  James Vega <vega.james@gmail.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -134,7 +134,7 @@
 if (exists("g:loaded_gnupg") || &cp || exists("#BufReadCmd*.\(gpg\|asc\|pgp\)"))
   finish
 endif
-let g:loaded_gnupg = '2.1'
+let g:loaded_gnupg = '2.2'
 let s:GPGInitRun = 0
 
 " check for correct vim version {{{2
@@ -366,6 +366,7 @@ function s:GPGDecrypt()
   let &shelltemp = s:shelltempsave
   call s:GPGDebug(3, "output: ". output)
 
+  let asymmPattern = 'gpg: public key is \%(0x\)\=[[:xdigit:]]\{8,16}'
   " check if the file is symmetric/asymmetric encrypted
   if (match(output, "gpg: encrypted with [[:digit:]]\\+ passphrase") >= 0)
     " file is symmetric encrypted
@@ -385,7 +386,7 @@ function s:GPGDecrypt()
       echo
       echohl None
     endif
-  elseif (match(output, "gpg: public key is [[:xdigit:]]\\{8}") >= 0)
+  elseif (match(output, asymmPattern) >= 0)
     " file is asymmetric encrypted
     let b:GPGEncrypted = 1
     call s:GPGDebug(1, "this file is asymmetric encrypted")
@@ -393,10 +394,10 @@ function s:GPGDecrypt()
     let b:GPGOptions += ["encrypt"]
 
     " find the used public keys
-    let start = match(output, "gpg: public key is [[:xdigit:]]\\{8}")
+    let start = match(output, asymmPattern)
     while (start >= 0)
       let start = start + strlen("gpg: public key is ")
-      let recipient = strpart(output, start, 8)
+      let recipient = matchstr(output, '[[:xdigit:]]\{8,16}', start)
       call s:GPGDebug(1, "recipient is " . recipient)
       let name = s:GPGNameToID(recipient)
       if (strlen(name) > 0)
@@ -408,7 +409,7 @@ function s:GPGDecrypt()
         echom "The recipient \"" . recipient . "\" is not in your public keyring!"
         echohl None
       end
-      let start = match(output, "gpg: public key is [[:xdigit:]]\\{8}", start)
+      let start = match(output, asymmPattern, start)
     endwhile
   else
     " file is not encrypted
