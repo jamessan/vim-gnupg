@@ -344,15 +344,19 @@ function s:GPGDecrypt()
   " get the filename of the current buffer
   let filename = expand("<afile>:p")
 
+  " clear GPGRecipients and GPGOptions
+  let b:GPGRecipients = g:GPGDefaultRecipients
+  let b:GPGOptions = []
+
   " File doesn't exist yet, so nothing to decrypt
   if empty(glob(filename))
     return
   endif
 
-  " clear GPGEncrypted, GPGRecipients and GPGOptions
+  " Only let this if the file actually exists, otherwise GPG functionality
+  " will be disabled when editing a buffer that doesn't yet have a backing
+  " file
   let b:GPGEncrypted = 0
-  let b:GPGRecipients = []
-  let b:GPGOptions = []
 
   " find the recipients of the file
   let commandline = s:GPGCommand . " --verbose --decrypt --list-only --dry-run --batch --no-use-agent --logger-fd 1 " . shellescape(filename)
