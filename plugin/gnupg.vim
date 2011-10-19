@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2011 Aug 13
+" Last Change: 2011 Oct 18
 " Maintainer:  James Vega <vega.james@gmail.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -573,7 +573,7 @@ function s:GPGEncrypt()
     return
   endif
 
-  call rename(destfile, expand('<afile>'))
+  call rename(destfile, resolve(expand('<afile>')))
   setl nomodified
   call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGEncrypt()")
 endfunction
