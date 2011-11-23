@@ -134,7 +134,7 @@
 if (exists("g:loaded_gnupg") || &cp || exists("#BufReadCmd*.\(gpg\|asc\|pgp\)"))
   finish
 endif
-let g:loaded_gnupg = '2.2'
+let g:loaded_gnupg = '2.3'
 let s:GPGInitRun = 0
 
 " check for correct vim version {{{2
@@ -235,6 +235,11 @@ function s:GPGInit()
   " prefer not to use pipes since it can garble gpg agent display
   if (!exists("g:GPGUsePipes"))
     let g:GPGUsePipes = 0
+  endif
+
+  " allow alternate gnupg homedir
+  if (!exists('g:GPGHomedir'))
+    let g:GPGHomedir = ''
   endif
 
   " print version
@@ -1146,6 +1151,9 @@ endfunction
 "
 function s:GPGSystem(dict)
   let commandline = printf('%s %s', s:GPGCommand, a:dict.args)
+  if (!empty(g:GPGHomedir))
+    let commandline .= ' --homedir ' . shellescape(g:GPGHomedir)
+  endif
   let commandline .= ' ' . s:stderrredirnull
   call s:GPGDebug(a:dict.level, "command: ". commandline)
 
@@ -1168,6 +1176,9 @@ endfunction
 "
 function s:GPGExecute(dict)
   let commandline = printf('%s%s %s', a:dict.ex, s:GPGCommand, a:dict.args)
+  if (!empty(g:GPGHomedir))
+    let commandline .= ' --homedir ' . shellescape(g:GPGHomedir, 1)
+  endif
   if (has_key(a:dict, 'redirect'))
     let commandline .= ' ' . a:dict.redirect
   endif
