@@ -89,6 +89,11 @@
 "     gnupg.  When set to 1, this can cause terminal-based gpg agents to not
 "     display correctly when prompting for passwords.  Defaults to 0.
 "
+"   g:GPGHomedir
+"     If set, specifies the directory that will be used for GPG's homedir.
+"     This corresponds to gpg's --homedir option.  This variable is a Vim
+"     string.
+"
 " Known Issues: {{{2
 "
 "   In some cases gvim can't decrypt files
