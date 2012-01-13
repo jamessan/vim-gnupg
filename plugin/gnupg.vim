@@ -159,6 +159,7 @@ augroup GnuPG
   autocmd BufReadCmd                             *.\(gpg\|asc\|pgp\) call s:GPGBufReadPost()
 
   " convert all text to encrypted text before writing
+  autocmd BufWriteCmd                            *.\(gpg\|asc\|pgp\) call s:GPGBufWritePre()
   autocmd BufWriteCmd,FileWriteCmd               *.\(gpg\|asc\|pgp\) call s:GPGInit()
   autocmd BufWriteCmd,FileWriteCmd               *.\(gpg\|asc\|pgp\) call s:GPGEncrypt()
 
@@ -459,6 +460,14 @@ function s:GPGBufReadPost()
   execute ':doautocmd BufReadPost ' . fnameescape(expand('<afile>:r'))
   call s:GPGDebug(2, 'called autocommand for ' . fnameescape(expand('<afile>:r')))
   call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGBufReadPost()")
+endfunction
+
+function s:GPGBufWritePre()
+  call s:GPGDebug(3, ">>>>>>>> Entering s:GPGBufWritePre()")
+  " call the autocommand for the file minus .gpg$
+  execute ':doautocmd BufWritePre ' . fnameescape(expand('<afile>:r'))
+  call s:GPGDebug(2, 'called autocommand for ' . fnameescape(expand('<afile>:r')))
+  call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGBufWritePre()")
 endfunction
 
 " Function: s:GPGEncrypt() {{{2
