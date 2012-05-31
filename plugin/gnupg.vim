@@ -18,7 +18,7 @@
 "   a file the content is decrypted, when opening a new file the script will
 "   ask for the recipients of the encrypted file. The file content will be
 "   encrypted to all recipients before it is written. The script turns off
-"   viminfo and swapfile to increase security.
+"   viminfo, swapfile, and undofile to increase security.
 "
 " Installation: {{{2
 "
@@ -154,13 +154,15 @@ augroup GnuPG
   autocmd!
 
   " do the decryption
-  autocmd BufReadCmd,FileReadCmd                 *.\(gpg\|asc\|pgp\) call s:GPGInit()
-  autocmd BufReadCmd,FileReadCmd                 *.\(gpg\|asc\|pgp\) call s:GPGDecrypt()
+  autocmd BufReadCmd                             *.\(gpg\|asc\|pgp\) call s:GPGInit(1)
+  autocmd BufReadCmd                             *.\(gpg\|asc\|pgp\) call s:GPGDecrypt(1)
   autocmd BufReadCmd                             *.\(gpg\|asc\|pgp\) call s:GPGBufReadPost()
+  autocmd FileReadCmd                            *.\(gpg\|asc\|pgp\) call s:GPGInit(0)
+  autocmd FileReadCmd                            *.\(gpg\|asc\|pgp\) call s:GPGDecrypt(0)
 
   " convert all text to encrypted text before writing
   autocmd BufWriteCmd                            *.\(gpg\|asc\|pgp\) call s:GPGBufWritePre()
-  autocmd BufWriteCmd,FileWriteCmd               *.\(gpg\|asc\|pgp\) call s:GPGInit()
+  autocmd BufWriteCmd,FileWriteCmd               *.\(gpg\|asc\|pgp\) call s:GPGInit(0)
   autocmd BufWriteCmd,FileWriteCmd               *.\(gpg\|asc\|pgp\) call s:GPGEncrypt()
 
   " cleanup on leaving vim
@@ -179,12 +181,13 @@ highlight default link GPGHighlightUnknownRecipient ErrorMsg
 
 " Section: Functions {{{1
 
-" Function: s:GPGInit() {{{2
+" Function: s:GPGInit(bufread) {{{2
 "
 " initialize the plugin
+" The bufread argument specifies whether this was called due to BufReadCmd
 "
-function s:GPGInit()
-  call s:GPGDebug(3, ">>>>>>>> Entering s:GPGInit()")
+function s:GPGInit(bufread)
+  call s:GPGDebug(3, printf(">>>>>>>> Entering s:GPGInit(%d)", a:bufread))
 
   " we don't want a swap file, as it writes unencrypted data to disk
   setl noswapfile
@@ -338,12 +341,13 @@ function s:GPGCleanup()
   call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGCleanup()")
 endfunction
 
-" Function: s:GPGDecrypt() {{{2
+" Function: s:GPGDecrypt(bufread) {{{2
 "
 " decrypt the buffer and find all recipients of the encrypted file
+" The bufread argument specifies whether this was called due to BufReadCmd
 "
-function s:GPGDecrypt()
-  call s:GPGDebug(3, ">>>>>>>> Entering s:GPGDecrypt()")
+function s:GPGDecrypt(bufread)
+  call s:GPGDebug(3, printf(">>>>>>>> Entering s:GPGDecrypt(%d)", a:bufread))
 
   " get the filename of the current buffer
   let filename = expand("<afile>:p")
