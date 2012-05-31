@@ -189,22 +189,28 @@ highlight default link GPGHighlightUnknownRecipient ErrorMsg
 function s:GPGInit(bufread)
   call s:GPGDebug(3, printf(">>>>>>>> Entering s:GPGInit(%d)", a:bufread))
 
-  " we don't want a swap file, as it writes unencrypted data to disk
-  setl noswapfile
+  " For FileReadCmd, we're reading the contents into another buffer.  If that
+  " buffer is also destined to be encrypted, then these settings will have
+  " already been set, otherwise don't set them since it limits the
+  " functionality of the cleartext buffer.
+  if a:bufread
+    " we don't want a swap file, as it writes unencrypted data to disk
+    setl noswapfile
 
-  " if persistent undo is present, disable it for this buffer
-  if exists('+undofile')
-    setl noundofile
+    " if persistent undo is present, disable it for this buffer
+    if exists('+undofile')
+      setl noundofile
+    endif
+
+    " first make sure nothing is written to ~/.viminfo while editing
+    " an encrypted file.
+    set viminfo=
   endif
 
   " the rest only has to be run once
   if s:GPGInitRun
     return
   endif
-
-  " first make sure nothing is written to ~/.viminfo while editing
-  " an encrypted file.
-  set viminfo=
 
   " check what gpg command to use
   if (!exists("g:GPGExecutable"))
