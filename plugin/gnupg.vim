@@ -796,13 +796,13 @@ function s:GPGFinishRecipientsBuffer()
   " delete the autocommand
   autocmd! * <buffer>
 
-
   " get the recipients from the scratch buffer
   let recipients = []
   let lines = getline(1,"$")
   for recipient in lines
-    " delete all text after magic string
-    let recipient = substitute(recipient, s:GPGMagicString . ".*$", "", "")
+    let matches = matchlist(recipient, '^\(.\{-}\)\%(' . s:GPGMagicString . '(ID:\s\+\(' . s:keyPattern . '\)\s\+.*\)\=$')
+
+    let recipient = matches[2] ? matches[2] : matches[1]
 
     " delete all spaces at beginning and end of the recipient
     " also delete a '!' at the beginning of the recipient
