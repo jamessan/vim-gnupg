@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2012 May 30
+" Last Change: 2012 May 31
 " Maintainer:  James McCoy <vega.james@gmail.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -1090,17 +1090,21 @@ function s:GPGNameToID(name)
       let duplicates[line] = 1
 
       let fields = split(line, ":")
+
+      " Ignore expired keys
+      if fields[1] == 'e'
+        continue
+      endif
+
       " search for the next uid
-      if (pubseen == 1)
+      if pubseen
         if (fields[0] == "uid")
           let choices = choices . "   " . fields[9] . "\n"
         else
           let pubseen = 0
         endif
-      endif
-
       " search for the next pub
-      if (pubseen == 0)
+      else
         if (fields[0] == "pub")
           let identity = fields[4]
           let gpgids += [identity]
@@ -1158,7 +1162,13 @@ function s:GPGIDToName(identity)
   let uid = ""
   for line in lines
     let fields = split(line, ":")
-    if (pubseen == 0) " search for the next pub
+
+    " Ignore expired keys
+    if fields[1] == 'e'
+      continue
+    endif
+
+    if !pubseen " search for the next pub
       if (fields[0] == "pub")
         let pubseen = 1
       endif
