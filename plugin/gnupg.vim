@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2011 Nov 23
+" Last Change: 2012 May 30
 " Maintainer:  James McCoy <vega.james@gmail.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -453,15 +453,33 @@ function s:GPGDecrypt()
   call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGDecrypt()")
 endfunction
 
+" Function: s:GPGBufReadPost() {{{2
+"
+" Handle functionality specific to opening a file for reading rather than
+" reading the contents of a file into a buffer
+"
 function s:GPGBufReadPost()
   call s:GPGDebug(3, ">>>>>>>> Entering s:GPGBufReadPost()")
+  " In order to make :undo a no-op immediately after the buffer is read,
+  " we need to do this dance with 'undolevels'.  Actually discarding the undo
+  " history requires performing a change after setting 'undolevels' to -1 and,
+  " luckily, we have one we need to do (delete the extra line from the :r
+  " command)
+  let levels = &undolevels
+  set undolevels=-1
   silent 1delete
+  let &undolevels = levels
   " call the autocommand for the file minus .gpg$
   execute ':doautocmd BufReadPost ' . fnameescape(expand('<afile>:r'))
   call s:GPGDebug(2, 'called autocommand for ' . fnameescape(expand('<afile>:r')))
   call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGBufReadPost()")
 endfunction
 
+" Function: s:GPGBufWritePre() {{{2
+"
+" Handle functionality specific to saving an entire buffer to a file rather
+" than saving a partial buffer
+"
 function s:GPGBufWritePre()
   call s:GPGDebug(3, ">>>>>>>> Entering s:GPGBufWritePre()")
   " call the autocommand for the file minus .gpg$
