@@ -172,6 +172,7 @@ augroup END
 " Section: Constants {{{1
 
 let s:GPGMagicString = "\t \t"
+let s:keyPattern = '\%(0x\)\=[[:xdigit:]]\{8,16}'
 
 " Section: Highlight setup {{{1
 
@@ -381,7 +382,7 @@ function s:GPGDecrypt(bufread)
   " the contents of a file into a buffer
   let silent = a:bufread ? 'silent ' : ''
 
-  let asymmPattern = 'gpg: public key is \%(0x\)\=[[:xdigit:]]\{8,16}'
+  let asymmPattern = 'gpg: public key is ' . s:keyPattern
   " check if the file is symmetric/asymmetric encrypted
   if (match(output, "gpg: encrypted with [[:digit:]]\\+ passphrase") >= 0)
     " file is symmetric encrypted
@@ -412,7 +413,7 @@ function s:GPGDecrypt(bufread)
     let start = match(output, asymmPattern)
     while (start >= 0)
       let start = start + strlen("gpg: public key is ")
-      let recipient = matchstr(output, '[[:xdigit:]]\{8,16}', start)
+      let recipient = matchstr(output, s:keyPattern, start)
       call s:GPGDebug(1, "recipient is " . recipient)
       let name = s:GPGNameToID(recipient)
       if (strlen(name) > 0)
