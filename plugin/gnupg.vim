@@ -377,6 +377,10 @@ function s:GPGDecrypt(bufread)
   let cmd.args = '--verbose --decrypt --list-only --dry-run --batch --no-use-agent --logger-fd 1 ' . shellescape(filename)
   let output = s:GPGSystem(cmd)
 
+  " Suppress the "N more lines" message when editing a file, not when reading
+  " the contents of a file into a buffer
+  let silent = a:bufread ? 'silent ' : ''
+
   let asymmPattern = 'gpg: public key is \%(0x\)\=[[:xdigit:]]\{8,16}'
   " check if the file is symmetric/asymmetric encrypted
   if (match(output, "gpg: encrypted with [[:digit:]]\\+ passphrase") >= 0)
@@ -429,7 +433,7 @@ function s:GPGDecrypt(bufread)
     echohl GPGWarning
     echom "File is not encrypted, all GPG functions disabled!"
     echohl None
-    silent exe '.r ' . fnameescape(filename)
+    exe printf('%sr %s', silent, fnameescape(filename))
     call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGDecrypt()")
     return
   endif
@@ -444,7 +448,7 @@ function s:GPGDecrypt(bufread)
   " since even with the --quiet option passphrase typos will be reported,
   " we must redirect stderr (using shell temporarily)
   call s:GPGDebug(1, "decrypting file")
-  let cmd = { 'level': 1, 'ex': 'r !' }
+  let cmd = { 'level': 1, 'ex': silent . 'r !' }
   let cmd.args = '--quiet --decrypt ' . shellescape(filename, 1)
   call s:GPGExecute(cmd)
 
