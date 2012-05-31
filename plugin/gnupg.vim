@@ -456,7 +456,11 @@ function s:GPGDecrypt(bufread)
     echohl GPGError
     let blackhole = input("Message could not be decrypted! (Press ENTER)")
     echohl None
-    silent bwipeout!
+    " Only wipeout the buffer if we were creating one to start with.
+    " FileReadCmd just reads the content into the existing buffer
+    if a:bufread
+      silent bwipeout!
+    endif
     call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGDecrypt()")
     return
   endif
