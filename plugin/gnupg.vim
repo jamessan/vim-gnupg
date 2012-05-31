@@ -136,10 +136,10 @@
 " Section: Plugin header {{{1
 
 " guard against multiple loads {{{2
-if (exists("g:loaded_gnupg") || &cp || exists("#BufReadCmd*.\(gpg\|asc\|pgp\)"))
+if (exists("g:loaded_gnupg") || &cp || exists("#GnuPG"))
   finish
 endif
-let g:loaded_gnupg = '2.3'
+let g:loaded_gnupg = '2.4'
 let s:GPGInitRun = 0
 
 " check for correct vim version {{{2
