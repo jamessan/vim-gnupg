@@ -1260,7 +1260,7 @@ function s:GPGDebug(level, text)
   if exists("g:GPGDebugLevel") && g:GPGDebugLevel >= a:level
     if exists("g:GPGDebugLog")
       execute "redir >> " . g:GPGDebugLog
-      echom "GnuPG: " . a:text
+      silent echom "GnuPG: " . a:text
       redir END
     else
       echom "GnuPG: " . a:text
