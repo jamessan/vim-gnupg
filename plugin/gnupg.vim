@@ -489,7 +489,7 @@ function s:GPGBufReadPost()
   silent 1delete
   let &undolevels = levels
   " call the autocommand for the file minus .gpg$
-  execute ':doautocmd BufReadPost ' . fnameescape(expand('<afile>:r'))
+  silent execute ':doautocmd BufReadPost ' . fnameescape(expand('<afile>:r'))
   call s:GPGDebug(2, 'called autocommand for ' . fnameescape(expand('<afile>:r')))
   call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGBufReadPost()")
 endfunction
@@ -502,7 +502,7 @@ endfunction
 function s:GPGBufWritePre()
   call s:GPGDebug(3, ">>>>>>>> Entering s:GPGBufWritePre()")
   " call the autocommand for the file minus .gpg$
-  execute ':doautocmd BufWritePre ' . fnameescape(expand('<afile>:r'))
+  silent execute ':doautocmd BufWritePre ' . fnameescape(expand('<afile>:r'))
   call s:GPGDebug(2, 'called autocommand for ' . fnameescape(expand('<afile>:r')))
   call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGBufWritePre()")
 endfunction
