@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2012 May 31
+" Last Change: 2012 Oct 28
 " Maintainer:  James McCoy <vega.james@gmail.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -267,9 +267,8 @@ function s:GPGInit(bufread)
       let $GPG_TTY = system("tty")
       if (v:shell_error)
         let $GPG_TTY = ""
-        echohl GPGError
-        echom "The GPG_TTY is not set and no TTY could be found using the `tty` command!"
-        echom "gpg-agent might not work."
+        echohl GPGWarning
+        echom "$GPG_TTY is not set and the `tty` command failed! gpg-agent might not work."
         echohl None
       endif
     endif
