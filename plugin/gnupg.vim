@@ -264,7 +264,22 @@ function s:GPGInit(bufread)
   " determine if gnupg can use the gpg-agent
   if (exists("$GPG_AGENT_INFO") && g:GPGUseAgent == 1)
     if (!exists("$GPG_TTY") && !has("gui_running"))
-      let $GPG_TTY = system("tty")
+      " Need to determine the associated tty by running a command in the
+      " shell.  We can't use system() here because that doesn't run in a shell
+      " connected to a tty, so it's rather useless.
+      "
+      " Save/restore &modified so the buffer isn't incorrectly marked as
+      " modified just by detecting the correct tty value.
+      " Do the &undolevels dance so the :read and :delete don't get added into
+      " the undo tree, as the user needn't be aware of these.
+      let [mod, levels] = [&l:modified, &undolevels]
+      set undolevels=-1
+      silent read !tty
+      let $GPG_TTY = getline('.')
+      silent delete
+      let [&l:modified, &undolevels] = [mod, levels]
+      " redraw is needed since we're using silent to run !tty, c.f. :help :!
+      redraw!
       if (v:shell_error)
         let $GPG_TTY = ""
         echohl GPGWarning
