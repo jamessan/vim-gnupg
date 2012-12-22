@@ -1236,6 +1236,7 @@ function s:GPGSystem(dict)
   let output = system(commandline)
   call s:GPGPostCmd()
 
+  call s:GPGDebug(a:dict.level, "rc: ". v:shell_error)
   call s:GPGDebug(a:dict.level, "output: ". output)
   return output
 endfunction
@@ -1263,6 +1264,8 @@ function s:GPGExecute(dict)
   call s:GPGPreCmd()
   execute commandline
   call s:GPGPostCmd()
+
+  call s:GPGDebug(a:dict.level, "rc: ". v:shell_error)
 endfunction
 
 " Function: s:GPGDebug(level, text) {{{2
