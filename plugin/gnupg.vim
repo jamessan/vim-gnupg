@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2012 Oct 28
+" Last Change: 2013 Jan 24
 " Maintainer:  James McCoy <vega.james@gmail.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -754,19 +754,20 @@ function s:GPGEditRecipients()
     endfor
 
     " put the unknown recipients in the scratch buffer
-    let syntaxPattern = "\\(nonexxistinwordinthisbuffer"
-    for name in unknownrecipients
-      let name = "!" . name
-      let syntaxPattern = syntaxPattern . "\\|" . fnameescape(name)
-      silent put =name
-    endfor
-    let syntaxPattern = syntaxPattern . "\\)"
+    let syntaxPattern = ''
+    if !empty(unknownrecipients)
+      let flaggedNames = map(unknownrecipients, '"!".v:val')
+      call append('$', flaggedNames)
+      let syntaxPattern = '\(' . join(flaggedNames, '\|') . '\)'
+    endif
 
     " define highlight
     if (has("syntax") && exists("g:syntax_on"))
-      execute 'syntax match GPGUnknownRecipient    "' . syntaxPattern . '"'
       highlight clear GPGUnknownRecipient
-      highlight link GPGUnknownRecipient  GPGHighlightUnknownRecipient
+      if !empty(syntaxPattern)
+        execute 'syntax match GPGUnknownRecipient    "' . syntaxPattern . '"'
+        highlight link GPGUnknownRecipient  GPGHighlightUnknownRecipient
+      endif
 
       syntax match GPGComment "^GPG:.*$"
       execute 'syntax match GPGComment "' . s:GPGMagicString . '.*$"'
