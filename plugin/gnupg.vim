@@ -841,7 +841,7 @@ function s:GPGFinishRecipientsBuffer()
   endfor
 
   " write back the new recipient list to the corresponding buffer and mark it
-  " as modified. Buffer is now for sure a encrypted buffer.
+  " as modified. Buffer is now for sure an encrypted buffer.
   call setbufvar(b:GPGCorrespondingTo, "GPGRecipients", recipients)
   call setbufvar(b:GPGCorrespondingTo, "&mod", 1)
   call setbufvar(b:GPGCorrespondingTo, "GPGEncrypted", 1)
@@ -1091,42 +1091,41 @@ function s:GPGNameToID(name)
   let pubseen = 0
   let counter = 0
   let gpgids = []
-  let duplicates = {}
+  let seen_keys = {}
+  let skip_key = 0
+  let has_strftime = exists('*strftime')
   let choices = "The name \"" . a:name . "\" is ambiguous. Please select the correct key:\n"
   for line in lines
 
-    " check if this line has already been processed
-    if !has_key(duplicates, line)
-      let duplicates[line] = 1
+    let fields = split(line, ":")
 
-      let fields = split(line, ":")
-
-      " search for the next uid
-      if pubseen
-        if (fields[0] == "uid")
-          let choices = choices . "   " . fields[9] . "\n"
-        else
-          let pubseen = 0
-        endif
-      " search for the next pub
-      else
-        if (fields[0] == "pub")
-          " Ignore keys which are not usable for encryption
-          if fields[11] !~? 'e'
-            continue
-          endif
-
-          let identity = fields[4]
-          let gpgids += [identity]
-          if exists("*strftime")
-            let choices = choices . counter . ": ID: 0x" . identity . " created at " . strftime("%c", fields[5]) . "\n"
-          else
-            let choices = choices . counter . ": ID: 0x" . identity . "\n"
-          endif
-          let counter = counter+1
-          let pubseen = 1
-        endif
+    " search for the next pub
+    if (fields[0] == "pub")
+      " check if this key has already been processed
+      if has_key(seen_keys, fields[4])
+        let skip_key = 1
+        continue
       endif
+      let skip_key = 0
+      let seen_keys[fields[4]] = 1
+
+      " Ignore keys which are not usable for encryption
+      if fields[11] !~? 'e'
+        continue
+      endif
+
+      let identity = fields[4]
+      let gpgids += [identity]
+      if has_strftime
+        let choices = choices . counter . ": ID: 0x" . identity . " created at " . strftime("%c", fields[5]) . "\n"
+      else
+        let choices = choices . counter . ": ID: 0x" . identity . "\n"
+      endif
+      let counter = counter+1
+      let pubseen = 1
+    " search for the next uid
+    elseif (!skip_key && fields[0] == "uid")
+      let choices = choices . "   " . fields[9] . "\n"
     endif
 
   endfor
