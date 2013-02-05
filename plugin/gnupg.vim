@@ -374,7 +374,7 @@ function s:GPGDecrypt(bufread)
   let filename = expand("<afile>:p")
 
   " clear GPGRecipients and GPGOptions
-  let b:GPGRecipients = g:GPGDefaultRecipients
+  let b:GPGRecipients = copy(g:GPGDefaultRecipients)
   let b:GPGOptions = []
 
   " File doesn't exist yet, so nothing to decrypt
