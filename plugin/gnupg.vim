@@ -150,23 +150,28 @@ endif
 
 " Section: Autocmd setup {{{1
 
+if (!exists("g:GPGFilePattern"))
+  let g:GPGFilePattern = '*.\(gpg\|asc\|pgp\)'
+endif
+
 augroup GnuPG
   autocmd!
 
   " do the decryption
-  autocmd BufReadCmd                             *.\(gpg\|asc\|pgp\) call s:GPGInit(1)
-  autocmd BufReadCmd                             *.\(gpg\|asc\|pgp\) call s:GPGDecrypt(1)
-  autocmd BufReadCmd                             *.\(gpg\|asc\|pgp\) call s:GPGBufReadPost()
-  autocmd FileReadCmd                            *.\(gpg\|asc\|pgp\) call s:GPGInit(0)
-  autocmd FileReadCmd                            *.\(gpg\|asc\|pgp\) call s:GPGDecrypt(0)
+  exe "autocmd BufReadCmd " . g:GPGFilePattern .  " call s:GPGInit(1) |" .
+                                                \ " call s:GPGDecrypt(1) |" .
+                                                \ " call s:GPGBufReadPost()"
+  exe "autocmd FileReadCmd " . g:GPGFilePattern . " call s:GPGInit(0) |" .
+                                                \ " call s:GPGDecrypt(0)"
 
   " convert all text to encrypted text before writing
-  autocmd BufWriteCmd                            *.\(gpg\|asc\|pgp\) call s:GPGBufWritePre()
-  autocmd BufWriteCmd,FileWriteCmd               *.\(gpg\|asc\|pgp\) call s:GPGInit(0)
-  autocmd BufWriteCmd,FileWriteCmd               *.\(gpg\|asc\|pgp\) call s:GPGEncrypt()
+  exe "autocmd BufWriteCmd " . g:GPGFilePattern . " call s:GPGBufWritePre()"
+  exe "autocmd BufWriteCmd,FileWriteCmd " . g:GPGFilePattern .
+                                                \ " call s:GPGInit(0) |" .
+                                                \ " call s:GPGEncrypt()"
 
   " cleanup on leaving vim
-  autocmd VimLeave                               *.\(gpg\|asc\|pgp\) call s:GPGCleanup()
+  exe "autocmd VimLeave " . g:GPGFilePattern .    " call s:GPGCleanup()"
 augroup END
 
 " Section: Constants {{{1
