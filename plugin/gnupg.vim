@@ -94,6 +94,11 @@
 "     This corresponds to gpg's --homedir option.  This variable is a Vim
 "     string.
 "
+"   g:GPGFilePattern
+"     If set, overrides the default set of file patterns that determine
+"     whether this plugin will be activated.  Defaults to
+"     '*.\(gpg\|asc\|pgp\)'.
+"
 " Known Issues: {{{2
 "
 "   In some cases gvim can't decrypt files
