@@ -389,6 +389,13 @@ function s:GPGDecrypt(bufread)
 
   " File doesn't exist yet, so nothing to decrypt
   if empty(glob(filename))
+
+    " This is a new file, so force the user to edit the recipient list if
+    " they open a new file and public keys are preferred
+    if (exists("g:GPGPreferSymmetric") && g:GPGPreferSymmetric == 0)
+        call s:GPGEditRecipients()
+    endif
+
     return
   endif
 
