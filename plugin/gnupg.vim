@@ -170,10 +170,15 @@ augroup GnuPG
                                                 \ " call s:GPGDecrypt(0)"
 
   " convert all text to encrypted text before writing
-  exe "autocmd BufWriteCmd " . g:GPGFilePattern . " call s:GPGBufWritePre()"
-  exe "autocmd BufWriteCmd,FileWriteCmd " . g:GPGFilePattern .
+  " We check for GPGCorrespondingTo to avoid triggering on writes in GPG Options/Recipient windows
+  exe "autocmd BufWriteCmd " . g:GPGFilePattern . " if !exists('b:GPGCorrespondingTo') |" .
+                                                \ " call s:GPGBufWritePre() |" .
+                                                \ " endif"
+
+  exe "autocmd BufWriteCmd,FileWriteCmd " . g:GPGFilePattern . " if !exists('b:GPGCorrespondingTo') |" .
                                                 \ " call s:GPGInit(0) |" .
-                                                \ " call s:GPGEncrypt()"
+                                                \ " call s:GPGEncrypt() |" .
+                                                \ " endif"
 
   " cleanup on leaving vim
   exe "autocmd VimLeave " . g:GPGFilePattern .    " call s:GPGCleanup()"
