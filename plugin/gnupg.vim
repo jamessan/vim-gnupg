@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2013 Jan 24
+" Last Change: 2013 Apr 23
 " Maintainer:  James McCoy <vega.james@gmail.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -41,6 +41,17 @@
 "
 "   Most distributions provide software to ease handling of gpg and gpg-agent.
 "   Examples are keychain or seahorse.
+"
+"   If there are specific actions that should take place when editing a
+"   GnuPG-managed buffer, an autocmd for the User event and GnuPG pattern can
+"   be defined.  For example, the following will set 'textwidth' to 72 for all
+"   GnuPG-encrypted buffers:
+"
+"       autocmd User GnuPG setl textwidth=72
+"
+"   This will be triggered before any BufRead or BufNewFile autocmds, and
+"   therefore will not take precedence over settings specific to any filetype
+"   that may get set.
 "
 " Commands: {{{2
 "
@@ -394,6 +405,11 @@ function s:GPGDecrypt(bufread)
 
   " File doesn't exist yet, so nothing to decrypt
   if empty(glob(filename))
+    " Allow the user to define actions for GnuPG buffers
+    silent doautocmd User GnuPG
+    " call the autocommand for the file minus .gpg$
+    silent execute ':doautocmd BufNewFile ' . fnameescape(expand('<afile>:r'))
+    call s:GPGDebug(2, 'called BufNewFile autocommand for ' . fnameescape(expand('<afile>:r')))
 
     " This is a new file, so force the user to edit the recipient list if
     " they open a new file and public keys are preferred
@@ -524,9 +540,11 @@ function s:GPGBufReadPost()
   set undolevels=-1
   silent 1delete
   let &undolevels = levels
+  " Allow the user to define actions for GnuPG buffers
+  silent doautocmd User GnuPG
   " call the autocommand for the file minus .gpg$
   silent execute ':doautocmd BufReadPost ' . fnameescape(expand('<afile>:r'))
-  call s:GPGDebug(2, 'called autocommand for ' . fnameescape(expand('<afile>:r')))
+  call s:GPGDebug(2, 'called BufReadPost autocommand for ' . fnameescape(expand('<afile>:r')))
   call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGBufReadPost()")
 endfunction
 
