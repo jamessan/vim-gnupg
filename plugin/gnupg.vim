@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2013 Apr 23
+" Last Change: 2013 Jun 14
 " Maintainer:  James McCoy <vega.james@gmail.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -637,7 +637,7 @@ function s:GPGEncrypt()
   let cmd = { 'level': 1, 'ex': "'[,']w !" }
   let cmd.args = '--quiet --no-encrypt-to ' . options
   let cmd.redirect = '>' . shellescape(destfile, 1)
-  call s:GPGExecute(cmd)
+  silent call s:GPGExecute(cmd)
 
   " restore encoding
   if (s:GPGEncoding != "")
