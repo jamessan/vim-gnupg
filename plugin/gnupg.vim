@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2013 Jun 14
+" Last Change: 2013 Sep 09
 " Maintainer:  James McCoy <vega.james@gmail.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -404,7 +404,7 @@ function s:GPGDecrypt(bufread)
   let b:GPGOptions = []
 
   " File doesn't exist yet, so nothing to decrypt
-  if empty(glob(filename))
+  if !filereadable(filename)
     " Allow the user to define actions for GnuPG buffers
     silent doautocmd User GnuPG
     " call the autocommand for the file minus .gpg$
