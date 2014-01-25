@@ -1,0 +1,81 @@
+*gnupg.txt*  Vim plugin for transparent editing of gpg encrypted files.
+
+Maintainer:      James McCoy <vega.james@gmail.com>
+Original Author: Markus Braun <markus.braun@krawel.de>
+License:         GPLv2+
+
+INTRODUCTION                                    *gnupg*
+
+This script implements transparent editing of gpg encrypted files. The
+filename must have a .gpg, .pgp or .asc suffix. When opening such a file the
+content is decrypted, when opening a new file the script will ask for the
+recipients of the encrypted file. The file content will be encrypted to all
+recipients before it is written. The script turns off viminfo, swapfile, and
+undofile to increase security.
+
+COMMANDS                                        *gnupg-commands*
+
+                                                *gnupg-:GPGEditRecipients*
+:GPGEditRecipients      Opens a scratch buffer to change the list of
+                        recipients. Recipients that are unknown (not in your
+                        public key) are highlighted and have a prepended "!".
+                        Closing the buffer makes the changes permanent.
+
+                                                *gnupg-:GPGViewRecipients*
+:GPGViewRecipients      Prints the list of recipients.
+
+                                                *gnupg-:GPGEditOptions*
+:GPGEditOptions         Opens a scratch buffer to change the options for
+                        encryption (symmetric, asymmetric, signing). Closing
+                        the buffer makes the changes permanent. WARNING: There
+                        is no check of the entered options, so you need to
+                        know what you are doing.
+
+                                                *gnupg-:GPGViewOptions*
+:GPGViewOptions         Prints the list of options.
+
+VARIABLES                                       *gnupg-variables*
+
+                                                *gnupg-g:GPGExecutable*
+g:GPGExecutable         If set used as gpg executable, otherwise the system
+                        chooses what is run when "gpg" is called. Defaults to
+                        "gpg".
+
+                                                *gnupg-g:GPGUseAgent*
+g:GPGUseAgent           If set to 0 a possible available gpg-agent won't be
+                        used. Defaults to 1.
+
+                                                *gnupg-g:GPGPreferSymmetric*
+g:GPGPreferSymmetric    If set to 1 symmetric encryption is preferred for new
+                        files. Defaults to 0.
+
+                                                *gnupg-g:GPGPreferArmor*
+g:GPGPreferArmor        If set to 1 armored data is preferred for new files.
+                        Defaults to 0 unless a "*.asc" file is being edited.
+
+                                                *gnupg-g:GPGPreferSign*
+g:GPGPreferSign         If set to 1 signed data is preferred for new files.
+                        Defaults to 0.
+
+                                                *gnupg-g:GPGDefaultRecipients*
+g:GPGDefaultRecipients  If set, these recipients are used as defaults when no
+                        other recipient is defined. This variable is a Vim
+                        list. Default is unset.
+
+                                                *gnupg-g:GPGUsePipes*
+g:GPGUsePipes           If set to 1, use pipes instead of temporary files when
+                        interacting with gnupg. When set to 1, this can cause
+                        terminal-based gpg agents to not display correctly
+                        when prompting for passwords. Defaults to 0.
+
+                                                *gnupg-g:GPGHomedir*
+g:GPGHomedir            If set, specifies the directory that will be used for
+                        GPG's homedir. This corresponds to gpg's --homedir
+                        option. This variable is a Vim string.
+
+                                                *gnupg-g:GPGFilePattern*
+g:GPGFilePattern        If set, overrides the default set of file patterns
+                        that determine whether this plugin will be activated.
+                        Defaults to '*.\(gpg\|asc\|pgp\)'.
+
+ vim:tw=78:et:ft=help:norl:
