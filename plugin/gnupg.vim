@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2013 Sep 09
+" Last Change: 2014 Jul 27
 " Maintainer:  James McCoy <vega.james@gmail.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -400,7 +400,14 @@ function s:GPGDecrypt(bufread)
   let filename = expand("<afile>:p")
 
   " clear GPGRecipients and GPGOptions
-  let b:GPGRecipients = copy(g:GPGDefaultRecipients)
+  if type(g:GPGDefaultRecipients) == type([])
+    let b:GPGRecipients = copy(g:GPGDefaultRecipients)
+  else
+    let b:GPGRecipients = []
+    echohl GPGWarning
+    echom "g:GPGDefaultRecipients is not a Vim list, please correct this in your vimrc!"
+    echohl None
+  endif
   let b:GPGOptions = []
 
   " File doesn't exist yet, so nothing to decrypt
