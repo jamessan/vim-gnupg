@@ -95,6 +95,16 @@
 "     If set, these recipients are used as defaults when no other recipient is
 "     defined. This variable is a Vim list. Default is unset.
 "
+"   g:GPGRecipientsMenu
+"     If set, these contents are loaded into the recipients dialog. This
+"     allows to add commented lines with possible recipients to the list,
+"     which can uncommented to select the actual recipients. Example:
+"
+"       let g:GPGRecipientsMenu=""
+"         \."GPG: Example User <example@example.com>\<NL>"
+"         \."GPG: Other User <otherexample@example.com>\<NL>"
+"
+"
 "   g:GPGUsePipes
 "     If set to 1, use pipes instead of temporary files when interacting with
 "     gnupg.  When set to 1, this can cause terminal-based gpg agents to not
@@ -273,6 +283,11 @@ function s:GPGInit(bufread)
   if (!exists("g:GPGDefaultRecipients"))
     let g:GPGDefaultRecipients = []
   endif
+
+  if (!exists("g:GPGRecipientsMenu"))
+    let g:GPGRecipientsMenu = ""
+  endif
+
 
   " prefer not to use pipes since it can garble gpg agent display
   if (!exists("g:GPGUsePipes"))
@@ -803,6 +818,11 @@ function s:GPGEditRecipients()
       call append('$', flaggedNames)
       let syntaxPattern = '\(' . join(flaggedNames, '\|') . '\)'
     endif
+
+    let lines = split(g:GPGRecipientsMenu, "\n")
+    for line in lines
+        silent put =line
+    endfor
 
     " define highlight
     if (has("syntax") && exists("g:syntax_on"))
