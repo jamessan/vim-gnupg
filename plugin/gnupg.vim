@@ -95,14 +95,15 @@
 "     If set, these recipients are used as defaults when no other recipient is
 "     defined. This variable is a Vim list. Default is unset.
 "
-"   g:GPGRecipientsMenu
+"   g:GPGPossibleRecipients
 "     If set, these contents are loaded into the recipients dialog. This
 "     allows to add commented lines with possible recipients to the list,
-"     which can uncommented to select the actual recipients. Example:
+"     which can be uncommented to select the actual recipients. Example:
 "
-"       let g:GPGRecipientsMenu=""
-"         \."GPG: Example User <example@example.com>\<NL>"
-"         \."GPG: Other User <otherexample@example.com>\<NL>"
+"       let g:GPGPossibleRecipients=[
+"         \"Example User <example@example.com>",
+"         \"Other User <otherexample@example.com>"
+"       \]
 "
 "
 "   g:GPGUsePipes
@@ -284,8 +285,8 @@ function s:GPGInit(bufread)
     let g:GPGDefaultRecipients = []
   endif
 
-  if (!exists("g:GPGRecipientsMenu"))
-    let g:GPGRecipientsMenu = ""
+  if (!exists("g:GPGPossibleRecipients"))
+    let g:GPGPossibleRecipients = []
   endif
 
 
@@ -819,9 +820,8 @@ function s:GPGEditRecipients()
       let syntaxPattern = '\(' . join(flaggedNames, '\|') . '\)'
     endif
 
-    let lines = split(g:GPGRecipientsMenu, "\n")
-    for line in lines
-        silent put =line
+    for line in g:GPGPossibleRecipients
+        silent put ='GPG: '.line
     endfor
 
     " define highlight
