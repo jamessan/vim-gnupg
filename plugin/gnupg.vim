@@ -680,6 +680,7 @@ function s:GPGEncrypt()
 
   call rename(destfile, resolve(expand('<afile>')))
   setl nomodified
+  silent execute ':doautocmd BufWritePost ' . fnameescape(expand('<afile>:r'))
   call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGEncrypt()")
 endfunction
 
