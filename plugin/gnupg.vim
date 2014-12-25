@@ -675,7 +675,10 @@ function s:GPGEncrypt()
   endif
 
   call rename(destfile, resolve(expand('<afile>')))
-  setl nomodified
+  if auType == 'BufWrite'
+    setl nomodified
+  endif
+
   silent exe ':doautocmd '. auType .'Post '. fnameescape(expand('<afile>:r'))
   call s:GPGDebug(2, 'called '. auType .'Post autocommand for ' . fnameescape(expand('<afile>:r')))
 
