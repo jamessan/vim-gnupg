@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2014 Nov 20
+" Last Change: 2014 Dec 25
 " Maintainer:  James McCoy <vega.james@gmail.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -193,14 +193,10 @@ augroup GnuPG
 
   " convert all text to encrypted text before writing
   " We check for GPGCorrespondingTo to avoid triggering on writes in GPG Options/Recipient windows
-  exe "autocmd BufWriteCmd " . g:GPGFilePattern . " if !exists('b:GPGCorrespondingTo') |" .
-                                                \ " call s:GPGBufWritePre() |" .
-                                                \ " endif"
-
   exe "autocmd BufWriteCmd,FileWriteCmd " . g:GPGFilePattern . " if !exists('b:GPGCorrespondingTo') |" .
-                                                \ " call s:GPGInit(0) |" .
-                                                \ " call s:GPGEncrypt() |" .
-                                                \ " endif"
+                                                             \ " call s:GPGInit(0) |" .
+                                                             \ " call s:GPGEncrypt() |" .
+                                                             \ " endif"
 
   " cleanup on leaving vim
   exe "autocmd VimLeave " . g:GPGFilePattern .    " call s:GPGCleanup()"
@@ -571,25 +567,25 @@ function s:GPGBufReadPost()
   call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGBufReadPost()")
 endfunction
 
-" Function: s:GPGBufWritePre() {{{2
-"
-" Handle functionality specific to saving an entire buffer to a file rather
-" than saving a partial buffer
-"
-function s:GPGBufWritePre()
-  call s:GPGDebug(3, ">>>>>>>> Entering s:GPGBufWritePre()")
-  " call the autocommand for the file minus .gpg$
-  silent execute ':doautocmd BufWritePre ' . fnameescape(expand('<afile>:r'))
-  call s:GPGDebug(2, 'called autocommand for ' . fnameescape(expand('<afile>:r')))
-  call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGBufWritePre()")
-endfunction
-
 " Function: s:GPGEncrypt() {{{2
 "
 " encrypts the buffer to all previous recipients
 "
 function s:GPGEncrypt()
   call s:GPGDebug(3, ">>>>>>>> Entering s:GPGEncrypt()")
+
+  " FileWriteCmd is only called when a portion of a buffer is being written to
+  " disk.  Since Vim always sets the '[,'] marks to the part of a buffer that
+  " is being written, that can be used to determine whether BufWriteCmd or
+  " FileWriteCmd triggered us.
+  if [line("'["), line("']")] == [1, line('$')]
+    let auType = 'BufWrite'
+  else
+    let auType = 'FileWrite'
+  endif
+
+  silent exe ':doautocmd '. auType .'Pre '. fnameescape(expand('<afile>:r'))
+  call s:GPGDebug(2, 'called '. auType .'Pre autocommand for ' . fnameescape(expand('<afile>:r')))
 
   " store encoding and switch to a safe one
   if (&fileencoding != &encoding)
@@ -680,7 +676,9 @@ function s:GPGEncrypt()
 
   call rename(destfile, resolve(expand('<afile>')))
   setl nomodified
-  silent execute ':doautocmd BufWritePost ' . fnameescape(expand('<afile>:r'))
+  silent exe ':doautocmd '. auType .'Post '. fnameescape(expand('<afile>:r'))
+  call s:GPGDebug(2, 'called '. auType .'Post autocommand for ' . fnameescape(expand('<afile>:r')))
+
   call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGEncrypt()")
 endfunction
 
