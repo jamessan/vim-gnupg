@@ -565,7 +565,11 @@ function s:GPGBufReadPost()
   " command)
   let levels = &undolevels
   set undolevels=-1
+  " :lockmarks doesn't actually prevent '[,'] from being overwritten, so we
+  " need to manually set them ourselves instead
   silent 1delete
+  1mark [
+  $mark ]
   let &undolevels = levels
   " Allow the user to define actions for GnuPG buffers
   silent doautocmd User GnuPG
