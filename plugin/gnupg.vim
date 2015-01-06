@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2014 Dec 25
+" Last Change: 2015 Jan 01
 " Maintainer:  James McCoy <vega.james@gmail.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -508,6 +508,14 @@ function s:GPGDecrypt(bufread)
     exe printf('%sr %s', silent, fnameescape(filename))
     call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGDecrypt()")
     return
+  endif
+
+  if a:bufread
+    silent execute ':doautocmd BufReadPre ' . fnameescape(expand('<afile>:r'))
+    call s:GPGDebug(2, 'called BufReadPre autocommand for ' . fnameescape(expand('<afile>:r')))
+  else
+    silent execute ':doautocmd FileReadPre ' . fnameescape(expand('<afile>:r'))
+    call s:GPGDebug(2, 'called FileReadPre autocommand for ' . fnameescape(expand('<afile>:r')))
   endif
 
   " check if the message is armored
