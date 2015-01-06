@@ -186,8 +186,7 @@ augroup GnuPG
 
   " do the decryption
   exe "autocmd BufReadCmd " . g:GPGFilePattern .  " call s:GPGInit(1) |" .
-                                                \ " call s:GPGDecrypt(1) |" .
-                                                \ " call s:GPGBufReadPost()"
+                                                \ " call s:GPGDecrypt(1) |"
   exe "autocmd FileReadCmd " . g:GPGFilePattern . " call s:GPGInit(0) |" .
                                                 \ " call s:GPGDecrypt(0)"
 
@@ -545,38 +544,36 @@ function s:GPGDecrypt(bufread)
     return
   endif
 
+  if a:bufread
+    " In order to make :undo a no-op immediately after the buffer is read,
+    " we need to do this dance with 'undolevels'.  Actually discarding the undo
+    " history requires performing a change after setting 'undolevels' to -1 and,
+    " luckily, we have one we need to do (delete the extra line from the :r
+    " command)
+    let levels = &undolevels
+    set undolevels=-1
+    " :lockmarks doesn't actually prevent '[,'] from being overwritten, so we
+    " need to manually set them ourselves instead
+    silent 1delete
+    1mark [
+    $mark ]
+    let &undolevels = levels
+    " call the autocommand for the file minus .gpg$
+    silent execute ':doautocmd BufReadPost ' . fnameescape(expand('<afile>:r'))
+    call s:GPGDebug(2, 'called BufReadPost autocommand for ' . fnameescape(expand('<afile>:r')))
+  else
+    " call the autocommand for the file minus .gpg$
+    silent execute ':doautocmd FileReadPost ' . fnameescape(expand('<afile>:r'))
+    call s:GPGDebug(2, 'called FileReadPost autocommand for ' . fnameescape(expand('<afile>:r')))
+  endif
+
+  " Allow the user to define actions for GnuPG buffers
+  silent doautocmd User GnuPG
+
   " refresh screen
   redraw!
 
   call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGDecrypt()")
-endfunction
-
-" Function: s:GPGBufReadPost() {{{2
-"
-" Handle functionality specific to opening a file for reading rather than
-" reading the contents of a file into a buffer
-"
-function s:GPGBufReadPost()
-  call s:GPGDebug(3, ">>>>>>>> Entering s:GPGBufReadPost()")
-  " In order to make :undo a no-op immediately after the buffer is read,
-  " we need to do this dance with 'undolevels'.  Actually discarding the undo
-  " history requires performing a change after setting 'undolevels' to -1 and,
-  " luckily, we have one we need to do (delete the extra line from the :r
-  " command)
-  let levels = &undolevels
-  set undolevels=-1
-  " :lockmarks doesn't actually prevent '[,'] from being overwritten, so we
-  " need to manually set them ourselves instead
-  silent 1delete
-  1mark [
-  $mark ]
-  let &undolevels = levels
-  " Allow the user to define actions for GnuPG buffers
-  silent doautocmd User GnuPG
-  " call the autocommand for the file minus .gpg$
-  silent execute ':doautocmd BufReadPost ' . fnameescape(expand('<afile>:r'))
-  call s:GPGDebug(2, 'called BufReadPost autocommand for ' . fnameescape(expand('<afile>:r')))
-  call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGBufReadPost()")
 endfunction
 
 " Function: s:GPGEncrypt() {{{2
