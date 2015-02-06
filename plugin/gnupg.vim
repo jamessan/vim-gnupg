@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2015 Jan 01
+" Last Change: 2015 Feb 06
 " Maintainer:  James McCoy <vega.james@gmail.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -1290,6 +1290,7 @@ function s:GPGPostCmd()
   " pinentry-curses by forcing Vim to re-detect and setup its terminal
   " settings
   let &term = &term
+  doautocmd TermChanged
 endfunction
 
 " Function: s:GPGSystem(dict) {{{2
