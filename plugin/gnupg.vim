@@ -1295,7 +1295,9 @@ endfunction
 
 " Function: s:GPGSystem(dict) {{{2
 "
-" run g:GPGCommand using system(), logging the commandline and output
+" run g:GPGCommand using system(), logging the commandline and output.  This
+" uses temp files (regardless of how 'shelltemp' is set) to hold the output of
+" the command, so it must not be used for sensitive commands.
 " Recognized keys are:
 " level - Debug level at which the commandline and output will be logged
 " args - Arguments to be given to g:GPGCommand
