@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2015 Mar 21
+" Last Change: 2015 Jul 16
 " Maintainer:  James McCoy <vega.james@gmail.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -298,36 +298,7 @@ function s:GPGInit(bufread)
   " print version
   call s:GPGDebug(1, "gnupg.vim ". g:loaded_gnupg)
 
-  " determine if gnupg can use the gpg-agent
-  if (exists("$GPG_AGENT_INFO") && g:GPGUseAgent == 1)
-    if (!exists("$GPG_TTY") && !has("gui_running"))
-      " Need to determine the associated tty by running a command in the
-      " shell.  We can't use system() here because that doesn't run in a shell
-      " connected to a tty, so it's rather useless.
-      "
-      " Save/restore &modified so the buffer isn't incorrectly marked as
-      " modified just by detecting the correct tty value.
-      " Do the &undolevels dance so the :read and :delete don't get added into
-      " the undo tree, as the user needn't be aware of these.
-      let [mod, levels] = [&l:modified, &undolevels]
-      set undolevels=-1
-      silent read !tty
-      let $GPG_TTY = getline('.')
-      silent delete
-      let [&l:modified, &undolevels] = [mod, levels]
-      " redraw is needed since we're using silent to run !tty, c.f. :help :!
-      redraw!
-      if (v:shell_error)
-        let $GPG_TTY = ""
-        echohl GPGWarning
-        echom "$GPG_TTY is not set and the `tty` command failed! gpg-agent might not work."
-        echohl None
-      endif
-    endif
-    let s:GPGCommand = g:GPGExecutable . " --use-agent"
-  else
-    let s:GPGCommand = g:GPGExecutable . " --no-use-agent"
-  endif
+  let s:GPGCommand = g:GPGExecutable
 
   " don't use tty in gvim except for windows: we get their a tty for free.
   " FIXME find a better way to avoid an error.
@@ -372,10 +343,42 @@ function s:GPGInit(bufread)
   " find the supported algorithms
   let output = s:GPGSystem({ 'level': 2, 'args': '--version' })
 
+  let gpgversion = substitute(output, '^gpg (GnuPG) \([0-9]\+\.\d\+\).*', '\1', '')
   let s:GPGPubkey = substitute(output, ".*Pubkey: \\(.\\{-}\\)\n.*", "\\1", "")
   let s:GPGCipher = substitute(output, ".*Cipher: \\(.\\{-}\\)\n.*", "\\1", "")
   let s:GPGHash = substitute(output, ".*Hash: \\(.\\{-}\\)\n.*", "\\1", "")
   let s:GPGCompress = substitute(output, ".*Compress.\\{-}: \\(.\\{-}\\)\n.*", "\\1", "")
+
+  " determine if gnupg can use the gpg-agent
+  if (str2float(gpgversion) >= 2.1 || (exists("$GPG_AGENT_INFO") && g:GPGUseAgent == 1))
+    if (!exists("$GPG_TTY") && !has("gui_running"))
+      " Need to determine the associated tty by running a command in the
+      " shell.  We can't use system() here because that doesn't run in a shell
+      " connected to a tty, so it's rather useless.
+      "
+      " Save/restore &modified so the buffer isn't incorrectly marked as
+      " modified just by detecting the correct tty value.
+      " Do the &undolevels dance so the :read and :delete don't get added into
+      " the undo tree, as the user needn't be aware of these.
+      let [mod, levels] = [&l:modified, &undolevels]
+      set undolevels=-1
+      silent read !tty
+      let $GPG_TTY = getline('.')
+      silent delete
+      let [&l:modified, &undolevels] = [mod, levels]
+      " redraw is needed since we're using silent to run !tty, c.f. :help :!
+      redraw!
+      if (v:shell_error)
+        let $GPG_TTY = ""
+        echohl GPGWarning
+        echom "$GPG_TTY is not set and the `tty` command failed! gpg-agent might not work."
+        echohl None
+      endif
+    endif
+    let s:GPGCommand = s:GPGCommand . " --use-agent"
+  else
+    let s:GPGCommand = s:GPGCommand . " --no-use-agent"
+  endif
 
   call s:GPGDebug(2, "public key algorithms: " . s:GPGPubkey)
   call s:GPGDebug(2, "cipher algorithms: " . s:GPGCipher)
