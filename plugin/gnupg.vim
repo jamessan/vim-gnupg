@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2015 Jul 26
+" Last Change: 2015 Sep 29
 " Maintainer:  James McCoy <vega.james@gmail.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -320,7 +320,6 @@ function s:GPGInit(bufread)
     let s:shellredir = ">%s 2>&1"
     let s:shell = '/bin/sh'
     let s:stderrredirnull = '2>/dev/null'
-    let s:GPGCommand = "LANG=C LC_ALL=C " . s:GPGCommand
   else
     " windows specific settings
     let s:shellredir = '>%s'
@@ -1279,16 +1278,29 @@ function s:GPGIDToName(identity)
   return uid
 endfunction
 
+" Function: s:GPGPreCmd() {{{2
+"
+" Setup the environment for running the gpg command
+"
 function s:GPGPreCmd()
   let &shellredir = s:shellredir
   let &shell = s:shell
   let &shelltemp = s:shelltemp
+  " Force C locale so GPG output is consistent
+  let s:messages = v:lang
+  language messages C
 endfunction
 
+
+" Function: s:GPGPostCmd() {{{2
+"
+" Restore the user's environment after running the gpg command
+"
 function s:GPGPostCmd()
   let &shellredir = s:shellredirsave
   let &shell = s:shellsave
   let &shelltemp = s:shelltempsave
+  execute 'language messages' s:messages
   " Workaround a bug in the interaction between console vim and
   " pinentry-curses by forcing Vim to re-detect and setup its terminal
   " settings
