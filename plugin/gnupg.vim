@@ -76,7 +76,7 @@
 "
 "   g:GPGExecutable
 "     If set used as gpg executable, otherwise the system chooses what is run
-"     when "gpg" is called. Defaults to "gpg".
+"     when "gpg" is called. Defaults to "gpg --trust-model always".
 "
 "   g:GPGUseAgent
 "     If set to 0 a possible available gpg-agent won't be used. Defaults to 1.
@@ -98,7 +98,8 @@
 "   g:GPGPossibleRecipients
 "     If set, these contents are loaded into the recipients dialog. This
 "     allows to add commented lines with possible recipients to the list,
-"     which can be uncommented to select the actual recipients. Example:
+"     which can be uncommented to select the actual recipients. Default is
+"     unset. Example:
 "
 "       let g:GPGPossibleRecipients=[
 "         \"Example User <example@example.com>",
@@ -114,7 +115,7 @@
 "   g:GPGHomedir
 "     If set, specifies the directory that will be used for GPG's homedir.
 "     This corresponds to gpg's --homedir option.  This variable is a Vim
-"     string.
+"     string. Default is unset.
 "
 "   g:GPGFilePattern
 "     If set, overrides the default set of file patterns that determine
