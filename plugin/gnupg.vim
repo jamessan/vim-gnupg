@@ -447,13 +447,16 @@ function s:GPGDecrypt(bufread)
   endif
   let b:GPGOptions = []
 
+  " file name minus extension
+  let autocmd_filename = fnameescape(expand('<afile>:r'))
+
   " File doesn't exist yet, so nothing to decrypt
   if !filereadable(filename)
     " Allow the user to define actions for GnuPG buffers
     silent doautocmd User GnuPG
     " call the autocommand for the file minus .gpg$
-    silent execute ':doautocmd BufNewFile ' . fnameescape(expand('<afile>:r'))
-    call s:GPGDebug(2, 'called BufNewFile autocommand for ' . fnameescape(expand('<afile>:r')))
+    silent execute ':doautocmd BufNewFile ' . autocmd_filename
+    call s:GPGDebug(2, 'called BufNewFile autocommand for ' . autocmd_filename)
 
     " This is a new file, so force the user to edit the recipient list if
     " they open a new file and public keys are preferred
@@ -536,11 +539,11 @@ function s:GPGDecrypt(bufread)
   endif
 
   if a:bufread
-    silent execute ':doautocmd BufReadPre ' . fnameescape(expand('<afile>:r'))
-    call s:GPGDebug(2, 'called BufReadPre autocommand for ' . fnameescape(expand('<afile>:r')))
+    silent execute ':doautocmd BufReadPre ' . autocmd_filename
+    call s:GPGDebug(2, 'called BufReadPre autocommand for ' . autocmd_filename)
   else
-    silent execute ':doautocmd FileReadPre ' . fnameescape(expand('<afile>:r'))
-    call s:GPGDebug(2, 'called FileReadPre autocommand for ' . fnameescape(expand('<afile>:r')))
+    silent execute ':doautocmd FileReadPre ' . autocmd_filename
+    call s:GPGDebug(2, 'called FileReadPre autocommand for ' . autocmd_filename)
   endif
 
   " check if the message is armored
@@ -585,12 +588,12 @@ function s:GPGDecrypt(bufread)
     $mark ]
     let &undolevels = levels
     " call the autocommand for the file minus .gpg$
-    silent execute ':doautocmd BufReadPost ' . fnameescape(expand('<afile>:r'))
-    call s:GPGDebug(2, 'called BufReadPost autocommand for ' . fnameescape(expand('<afile>:r')))
+    silent execute ':doautocmd BufReadPost ' . autocmd_filename
+    call s:GPGDebug(2, 'called BufReadPost autocommand for ' . autocmd_filename)
   else
     " call the autocommand for the file minus .gpg$
-    silent execute ':doautocmd FileReadPost ' . fnameescape(expand('<afile>:r'))
-    call s:GPGDebug(2, 'called FileReadPost autocommand for ' . fnameescape(expand('<afile>:r')))
+    silent execute ':doautocmd FileReadPost ' . autocmd_filename
+    call s:GPGDebug(2, 'called FileReadPost autocommand for ' . autocmd_filename)
   endif
 
   " Allow the user to define actions for GnuPG buffers
@@ -619,8 +622,11 @@ function s:GPGEncrypt()
     let auType = 'FileWrite'
   endif
 
-  silent exe ':doautocmd '. auType .'Pre '. fnameescape(expand('<afile>:r'))
-  call s:GPGDebug(2, 'called '. auType .'Pre autocommand for ' . fnameescape(expand('<afile>:r')))
+  " file name minus extension
+  let autocmd_filename = fnameescape(expand('<afile>:r'))
+
+  silent exe ':doautocmd '. auType .'Pre '. autocmd_filename
+  call s:GPGDebug(2, 'called '. auType .'Pre autocommand for ' . autocmd_filename)
 
   " store encoding and switch to a safe one
   if (&fileencoding != &encoding)
@@ -714,8 +720,8 @@ function s:GPGEncrypt()
     setl nomodified
   endif
 
-  silent exe ':doautocmd '. auType .'Post '. fnameescape(expand('<afile>:r'))
-  call s:GPGDebug(2, 'called '. auType .'Post autocommand for ' . fnameescape(expand('<afile>:r')))
+  silent exe ':doautocmd '. auType .'Post '. autocmd_filename
+  call s:GPGDebug(2, 'called '. auType .'Post autocommand for ' . autocmd_filename)
 
   call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGEncrypt()")
 endfunction
