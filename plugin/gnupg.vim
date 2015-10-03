@@ -460,7 +460,7 @@ function s:GPGDecrypt(bufread)
 
     " This is a new file, so force the user to edit the recipient list if
     " they open a new file and public keys are preferred
-    if (exists("g:GPGPreferSymmetric") && g:GPGPreferSymmetric == 0)
+    if (g:GPGPreferSymmetric == 0)
         call s:GPGEditRecipients()
     endif
 
