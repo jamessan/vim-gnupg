@@ -328,7 +328,7 @@ function s:GPGInit(bufread)
   " FIXME find a better way to avoid an error.
   "       with this solution only --use-agent will work
   if (has("gui_running") && !has("gui_win32"))
-    let s:GPGCommand = s:GPGCommand . " --no-tty"
+    let s:GPGCommand .= " --no-tty"
   endif
 
   " setup shell environment for unix and windows
@@ -398,9 +398,9 @@ function s:GPGInit(bufread)
         echohl None
       endif
     endif
-    let s:GPGCommand = s:GPGCommand . " --use-agent"
+    let s:GPGCommand .= " --use-agent"
   else
-    let s:GPGCommand = s:GPGCommand . " --no-use-agent"
+    let s:GPGCommand .= " --no-use-agent"
   endif
 
   call s:GPGDebug(2, "public key algorithms: " . s:GPGPubkey)
