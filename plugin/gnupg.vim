@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2015 Sep 29
+" Last Change: 2015 Nov 04
 " Maintainer:  James McCoy <vega.james@gmail.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -587,6 +587,7 @@ function s:GPGDecrypt(bufread)
     1mark [
     $mark ]
     let &undolevels = levels
+    let &readonly = filereadable(filename) && filewritable(filename) == 0
     " call the autocommand for the file minus .gpg$
     silent execute ':doautocmd BufReadPost ' . autocmd_filename
     call s:GPGDebug(2, 'called BufReadPost autocommand for ' . autocmd_filename)
