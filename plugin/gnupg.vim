@@ -514,15 +514,25 @@ function s:GPGDecrypt(bufread)
       let start = start + strlen("gpg: public key is ")
       let recipient = matchstr(output, s:keyPattern, start)
       call s:GPGDebug(1, "recipient is " . recipient)
-      let name = s:GPGNameToID(recipient)
-      if !empty(name)
-        let b:GPGRecipients += [name]
-        call s:GPGDebug(1, "name of recipient is " . name)
-      else
-        let b:GPGRecipients += [recipient]
-        echohl GPGWarning
-        echom "The recipient \"" . recipient . "\" is not in your public keyring!"
-        echohl None
+      " In order to support anonymous communication, GnuPG allows eliding
+      " information in the encryption metadata specifying what keys the file
+      " was encrypted to (c.f., --throw-keyids and --hidden-recipient).  In
+      " that case, the recipient(s) will be listed as having used a key of all
+      " zeroes.
+      " Since this will obviously never actually be in a keyring, only try to
+      " convert to an ID or add to the recipients list if it's not a hidden
+      " recipient.
+      if recipient !~? '^0x0\+$'
+        let name = s:GPGNameToID(recipient)
+        if !empty(name)
+          let b:GPGRecipients += [name]
+          call s:GPGDebug(1, "name of recipient is " . name)
+        else
+          let b:GPGRecipients += [recipient]
+          echohl GPGWarning
+          echom "The recipient \"" . recipient . "\" is not in your public keyring!"
+          echohl None
+        end
       end
       let start = match(output, asymmPattern, start)
     endwhile
