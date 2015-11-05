@@ -726,9 +726,11 @@ function s:GPGEncrypt()
     return
   endif
 
-  call rename(destfile, resolve(expand('<afile>')))
+  let filename = resolve(expand('<afile>'))
+  call rename(destfile, filename)
   if auType == 'BufWrite'
     setl nomodified
+    let &readonly = filereadable(filename) && filewritable(filename) == 0
   endif
 
   silent exe ':doautocmd '. auType .'Post '. autocmd_filename
