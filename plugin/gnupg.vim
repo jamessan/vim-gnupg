@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2015 Nov 04
+" Last Change: 2015 Dec 04
 " Maintainer:  James McCoy <vega.james@gmail.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -143,6 +143,13 @@
 "     - gpgagent and pinentry:
 "         you will get a popup window the first time you open a file that
 "         needs to be decrypted.
+"
+"   If you're using Vim <7.4.959, after the plugin runs any external command,
+"   Vim will no longer be able to yank to/paste from the X clipboard or
+"   primary selections.  This is caused by a workaround for a different bug
+"   where Vim no longer recognizes the key codes for keys such as the arrow
+"   keys after running GnuPG.  See the discussion at
+"   https://github.com/jamessan/vim-gnupg/issues/36 for more details.
 "
 " Credits: {{{2
 "
