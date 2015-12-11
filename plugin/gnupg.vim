@@ -75,8 +75,9 @@
 " Variables: {{{2
 "
 "   g:GPGExecutable
-"     If set used as gpg executable, otherwise the system chooses what is run
-"     when "gpg" is called. Defaults to "gpg --trust-model always".
+"     If set used as gpg executable. If unset, defaults to
+"     "gpg --trust-model always" if "gpg" is available, falling back to
+"     "gpg2 --trust-model always" if not.
 "
 "   g:GPGUseAgent
 "     If set to 0 a possible available gpg-agent won't be used. Defaults to 1.
@@ -278,7 +279,11 @@ function s:GPGInit(bufread)
 
   " check what gpg command to use
   if (!exists("g:GPGExecutable"))
-    let g:GPGExecutable = "gpg --trust-model always"
+    if executable("gpg")
+      let g:GPGExecutable = "gpg --trust-model always"
+    else
+      let g:GPGExecutable = "gpg2 --trust-model always"
+    endif
   endif
 
   " check if gpg-agent is allowed
