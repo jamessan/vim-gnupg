@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2015 Dec 04
+" Last Change: 2015 Dec 17
 " Maintainer:  James McCoy <vega.james@gmail.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -739,7 +739,15 @@ function s:GPGEncrypt()
   endif
 
   let filename = resolve(expand('<afile>'))
-  call rename(destfile, filename)
+  if rename(destfile, filename)
+    " Rename failed, so clean up the tempfile
+    call delete(destfile)
+    echohl GPGError
+    echom printf("\"%s\" E212: Can't open file for writing", filename)
+    echohl None
+    return
+  endif
+
   if auType == 'BufWrite'
     setl nomodified
     let &readonly = filereadable(filename) && filewritable(filename) == 0
