@@ -1,6 +1,6 @@
 " Name:    gnupg.vim
-" Last Change: 2015 Dec 17
-" Maintainer:  James McCoy <vega.james@gmail.com>
+" Last Change: 2016 Apr 24
+" Maintainer:  James McCoy <jamessan@jamessan.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
 " License: This program is free software; you can redistribute it and/or
@@ -175,7 +175,7 @@
 if (exists("g:loaded_gnupg") || &cp || exists("#GnuPG"))
   finish
 endif
-let g:loaded_gnupg = '2.5'
+let g:loaded_gnupg = '2.6'
 let s:GPGInitRun = 0
 
 " check for correct vim version {{{2
@@ -294,16 +294,6 @@ function s:GPGInit(bufread)
   " check if symmetric encryption is preferred
   if (!exists("g:GPGPreferSymmetric"))
     let g:GPGPreferSymmetric = 0
-  endif
-
-  " check if armored files are preferred
-  if (!exists("g:GPGPreferArmor"))
-    " .asc files should be armored as that's what the extension is used for
-    if expand('<afile>') =~ '\.asc$'
-      let g:GPGPreferArmor = 1
-    else
-      let g:GPGPreferArmor = 0
-    endif
   endif
 
   " check if signed files are preferred
@@ -670,6 +660,7 @@ function s:GPGEncrypt()
     return
   endif
 
+  let filename = resolve(expand('<afile>'))
   " initialize GPGOptions if not happened before
   if (!exists("b:GPGOptions") || empty(b:GPGOptions))
     let b:GPGOptions = []
@@ -679,7 +670,10 @@ function s:GPGEncrypt()
     else
       let b:GPGOptions += ["encrypt"]
     endif
-    if (exists("g:GPGPreferArmor") && g:GPGPreferArmor == 1)
+    " Fallback to preference by filename if the user didn't indicate
+    " their preference.
+    let preferArmor = get(g:, 'GPGPreferArmor', -1)
+    if (preferArmor >= 0 && preferArmor) || filename =~ '\.asc$'
       let b:GPGOptions += ["armor"]
     endif
     if (exists("g:GPGPreferSign") && g:GPGPreferSign == 1)
@@ -738,7 +732,6 @@ function s:GPGEncrypt()
     return
   endif
 
-  let filename = resolve(expand('<afile>'))
   if rename(destfile, filename)
     " Rename failed, so clean up the tempfile
     call delete(destfile)
