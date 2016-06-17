@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2017 Feb 14
+" Last Change: 2017 Feb 25
 " Maintainer:  James McCoy <jamessan@jamessan.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.

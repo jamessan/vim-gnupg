@@ -1,5 +1,5 @@
 " Name:    autoload/gnupg.vim
-" Last Change: 2015 Dec 26
+" Last Change: 2017 Feb 25
 " Summary: Autoload functions for the gnupg plugin.
 " License: This program is free software; you can redistribute it and/or
 "          modify it under the terms of the GNU General Public License
