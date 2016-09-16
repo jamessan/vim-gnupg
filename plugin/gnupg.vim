@@ -193,16 +193,16 @@ augroup GnuPG
   autocmd!
 
   " do the decryption
-  exe "autocmd BufReadCmd " . g:GPGFilePattern .  " call gnupg#GPGInit(1) |" .
-                                                \ " call gnupg#GPGDecrypt(1)"
-  exe "autocmd FileReadCmd " . g:GPGFilePattern . " call gnupg#GPGInit(0) |" .
-                                                \ " call gnupg#GPGDecrypt(0)"
+  exe "autocmd BufReadCmd " . g:GPGFilePattern .  " call gnupg#init(1) |" .
+                                                \ " call gnupg#decrypt(1)"
+  exe "autocmd FileReadCmd " . g:GPGFilePattern . " call gnupg#init(0) |" .
+                                                \ " call gnupg#decrypt(0)"
 
   " convert all text to encrypted text before writing
   " We check for GPGCorrespondingTo to avoid triggering on writes in GPG Options/Recipient windows
   exe "autocmd BufWriteCmd,FileWriteCmd " . g:GPGFilePattern . " if !exists('b:GPGCorrespondingTo') |" .
-                                                             \ " call gnupg#GPGInit(0) |" .
-                                                             \ " call gnupg#GPGEncrypt() |" .
+                                                             \ " call gnupg#init(0) |" .
+                                                             \ " call gnupg#encrypt() |" .
                                                              \ " endif"
 augroup END
 
@@ -214,10 +214,10 @@ highlight default link GPGHighlightUnknownRecipient ErrorMsg
 
 " Section: Commands {{{1
 
-command! GPGViewRecipients call gnupg#GPGViewRecipients()
-command! GPGEditRecipients call gnupg#GPGEditRecipients()
-command! GPGViewOptions call gnupg#GPGViewOptions()
-command! GPGEditOptions call gnupg#GPGEditOptions()
+command! GPGViewRecipients call gnupg#view_recipients()
+command! GPGEditRecipients call gnupg#edit_recipients()
+command! GPGViewOptions call gnupg#view_options()
+command! GPGEditOptions call gnupg#edit_options()
 
 " Section: Menu {{{1
 
