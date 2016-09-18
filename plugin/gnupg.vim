@@ -644,16 +644,6 @@ function s:GPGEncrypt()
   silent exe ':doautocmd '. auType .'Pre '. autocmd_filename
   call s:GPGDebug(2, 'called '. auType .'Pre autocommand for ' . autocmd_filename)
 
-  " store encoding and switch to a safe one
-  if (&fileencoding != &encoding)
-    let s:GPGEncoding = &encoding
-    let &encoding = &fileencoding
-    call s:GPGDebug(2, "encoding was \"" . s:GPGEncoding . "\", switched to \"" . &encoding . "\"")
-  else
-    let s:GPGEncoding = ""
-    call s:GPGDebug(2, "encoding and fileencoding are the same (\"" . &encoding . "\"), not switching")
-  endif
-
   " guard for unencrypted files
   if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
     echohl GPGError
@@ -718,12 +708,6 @@ function s:GPGEncrypt()
   let cmd.args = '--quiet --no-encrypt-to ' . options
   let cmd.redirect = '>' . s:shellescape(destfile, 1)
   silent call s:GPGExecute(cmd)
-
-  " restore encoding
-  if (s:GPGEncoding != "")
-    let &encoding = s:GPGEncoding
-    call s:GPGDebug(2, "restored encoding \"" . &encoding . "\"")
-  endif
 
   if (v:shell_error) " message could not be encrypted
     " Command failed, so clean up the tempfile
