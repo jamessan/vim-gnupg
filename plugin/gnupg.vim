@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2016 Aug 25
+" Last Change: 2016 Sep 17
 " Maintainer:  James McCoy <jamessan@jamessan.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -175,7 +175,7 @@
 if (exists("g:loaded_gnupg") || &cp || exists("#GnuPG"))
   finish
 endif
-let g:loaded_gnupg = '2.6'
+let g:loaded_gnupg = '2.6.1-dev'
 let s:GPGInitRun = 0
 
 " check for correct vim version {{{2
@@ -568,7 +568,7 @@ function s:GPGDecrypt(bufread)
   " since even with the --quiet option passphrase typos will be reported,
   " we must redirect stderr (using shell temporarily)
   call s:GPGDebug(1, "decrypting file")
-  let cmd = { 'level': 1, 'ex': silent . 'r !' }
+  let cmd = { 'level': 1, 'ex': silent . 'read ++edit !' }
   let cmd.args = '--quiet --decrypt ' . s:shellescape(filename, 1)
   call s:GPGExecute(cmd)
 
@@ -714,7 +714,7 @@ function s:GPGEncrypt()
 
   " encrypt the buffer
   let destfile = tempname()
-  let cmd = { 'level': 1, 'ex': "'[,']w !" }
+  let cmd = { 'level': 1, 'ex': "'[,']write !" }
   let cmd.args = '--quiet --no-encrypt-to ' . options
   let cmd.redirect = '>' . s:shellescape(destfile, 1)
   silent call s:GPGExecute(cmd)
