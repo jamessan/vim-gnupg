@@ -558,8 +558,9 @@ function s:GPGDecrypt(bufread)
     call s:GPGDebug(2, 'called FileReadPre autocommand for ' . autocmd_filename)
   endif
 
-  " check if the message is armored
-  if (match(output, "gpg: armor header") >= 0)
+  " check if the message is armored or if filename ends with .asc
+  if (match(output, "gpg: armor header") >= 0 || expand('<afile>') =~ '\.asc$')
+
     call s:GPGDebug(1, "this file is armored")
     let b:GPGOptions += ["armor"]
   endif
