@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2016 Sep 17
+" Last Change: 2016 Dec 04
 " Maintainer:  James McCoy <jamessan@jamessan.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -799,7 +799,7 @@ function s:GPGEditRecipients()
   endif
 
   " only do this if it isn't already a GPGRecipients_* buffer
-  if (match(bufname("%"), "^\\(GPGRecipients_\\|GPGOptions_\\)") != 0 && match(bufname("%"), "\.\\(gpg\\|asc\\|pgp\\)$") >= 0)
+  if (!exists('b:GPGCorrespondingTo'))
 
     " save buffer name
     let buffername = bufname("%")
@@ -1026,7 +1026,7 @@ function s:GPGEditOptions()
   endif
 
   " only do this if it isn't already a GPGOptions_* buffer
-  if (match(bufname("%"), "^\\(GPGRecipients_\\|GPGOptions_\\)") != 0 && match(bufname("%"), "\.\\(gpg\\|asc\\|pgp\\)$") >= 0)
+  if (!exists('b:GPGCorrespondingTo'))
 
     " save buffer name
     let buffername = bufname("%")
