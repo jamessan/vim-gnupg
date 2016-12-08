@@ -847,6 +847,7 @@ function s:GPGEditRecipients()
     silent put ='GPG: Data after recipients between and including \"(\" and \")\" is ignored.'
     silent put ='GPG: Closing this buffer commits changes.'
     silent put ='GPG: ----------------------------------------------------------------------'
+    silent put =''
 
     " get the recipients
     let recipients = s:GPGCheckRecipients(getbufvar(b:GPGCorrespondingTo, "GPGRecipients"))
