@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2016 Dec 17
+" Last Change: 2016 Dec 18
 " Maintainer:  James McCoy <jamessan@jamessan.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -467,14 +467,13 @@ function s:GPGDecrypt(bufread)
   let b:GPGOptions = []
 
   " file name minus extension
-  let autocmd_filename = fnameescape(expand('<afile>:r'))
+  let autocmd_filename = expand('<afile>:r')
 
   " File doesn't exist yet, so nothing to decrypt
   if !filereadable(filename)
     " Allow the user to define actions for GnuPG buffers
     silent doautocmd User GnuPG
-    " call the autocommand for the file minus .gpg$
-    silent execute ':doautocmd BufNewFile ' . autocmd_filename
+    silent execute ':doautocmd BufNewFile ' . fnameescape(autocmd_filename)
     call s:GPGDebug(2, 'called BufNewFile autocommand for ' . autocmd_filename)
 
     " This is a new file, so force the user to edit the recipient list if
@@ -564,12 +563,12 @@ function s:GPGDecrypt(bufread)
     echohl None
   endif
 
-  let bufname = b:GPGEncrypted ? autocmd_filename : fnameescape(filename)
+  let bufname = b:GPGEncrypted ? autocmd_filename : filename
   if a:bufread
-    silent execute ':doautocmd BufReadPre ' . bufname
+    silent execute ':doautocmd BufReadPre ' . fnameescape(bufname)
     call s:GPGDebug(2, 'called BufReadPre autocommand for ' . bufname)
   else
-    silent execute ':doautocmd FileReadPre ' . bufname
+    silent execute ':doautocmd FileReadPre ' . fnameescape(bufname)
     call s:GPGDebug(2, 'called FileReadPre autocommand for ' . bufname)
   endif
 
@@ -622,12 +621,10 @@ function s:GPGDecrypt(bufread)
     " - 'readonly' is already set (e.g., when using view/vim -R)
     " - permissions don't allow writing
     let &readonly = &readonly || (filereadable(filename) && filewritable(filename) == 0)
-    " call the autocommand for the file minus .gpg$
-    silent execute ':doautocmd BufReadPost ' . bufname
+    silent execute ':doautocmd BufReadPost ' . fnameescape(bufname)
     call s:GPGDebug(2, 'called BufReadPost autocommand for ' . bufname)
   else
-    " call the autocommand for the file minus .gpg$
-    silent execute ':doautocmd FileReadPost ' . bufname
+    silent execute ':doautocmd FileReadPost ' . fnameescape(bufname)
     call s:GPGDebug(2, 'called FileReadPost autocommand for ' . bufname)
   endif
 
@@ -660,9 +657,9 @@ function s:GPGEncrypt()
   endif
 
   " file name minus extension
-  let autocmd_filename = fnameescape(expand('<afile>:r'))
+  let autocmd_filename = expand('<afile>:r')
 
-  silent exe ':doautocmd '. auType .'Pre '. autocmd_filename
+  silent exe ':doautocmd '. auType .'Pre '. fnameescape(autocmd_filename)
   call s:GPGDebug(2, 'called '. auType .'Pre autocommand for ' . autocmd_filename)
 
   " guard for unencrypted files
@@ -754,7 +751,7 @@ function s:GPGEncrypt()
     let &readonly = filereadable(filename) && filewritable(filename) == 0
   endif
 
-  silent exe ':doautocmd '. auType .'Post '. autocmd_filename
+  silent exe ':doautocmd '. auType .'Post '. fnameescape(autocmd_filename)
   call s:GPGDebug(2, 'called '. auType .'Post autocommand for ' . autocmd_filename)
 
   call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGEncrypt()")
