@@ -246,6 +246,23 @@ function s:shellescape(s, ...)
   return escaped
 endfunction
 
+" Function: s:unencrypted() {{{2
+"
+" Determines if the buffer corresponds to an existing, unencrypted file and,
+" if so, warns the user that GPG functionality has been disabled.
+"
+" Returns: true if current buffer corresponds to an existing, unencrypted file
+function! s:unencrypted()
+  if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
+    echohl GPGWarning
+    echom "File is not encrypted, all GPG functions disabled!"
+    echohl None
+    return 1
+  endif
+
+  return 0
+endfunction
+
 " Function: s:GPGInit(bufread) {{{2
 "
 " initialize the plugin
@@ -789,11 +806,7 @@ endfunction
 function s:GPGEditRecipients()
   call s:GPGDebug(3, ">>>>>>>> Entering s:GPGEditRecipients()")
 
-  " guard for unencrypted files
-  if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
-    echohl GPGWarning
-    echom "File is not encrypted, all GPG functions disabled!"
-    echohl None
+  if s:unencrypted()
     call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGEditRecipients()")
     return
   endif
@@ -912,11 +925,7 @@ endfunction
 function s:GPGFinishRecipientsBuffer()
   call s:GPGDebug(3, ">>>>>>>> Entering s:GPGFinishRecipientsBuffer()")
 
-  " guard for unencrypted files
-  if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
-    echohl GPGWarning
-    echom "File is not encrypted, all GPG functions disabled!"
-    echohl None
+  if s:unencrypted()
     call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGFinishRecipientsBuffer()")
     return
   endif
@@ -989,11 +998,7 @@ endfunction
 function s:GPGViewOptions()
   call s:GPGDebug(3, ">>>>>>>> Entering s:GPGViewOptions()")
 
-  " guard for unencrypted files
-  if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
-    echohl GPGWarning
-    echom "File is not encrypted, all GPG functions disabled!"
-    echohl None
+  if s:unencrypted()
     call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGViewOptions()")
     return
   endif
@@ -1016,11 +1021,7 @@ endfunction
 function s:GPGEditOptions()
   call s:GPGDebug(3, ">>>>>>>> Entering s:GPGEditOptions()")
 
-  " guard for unencrypted files
-  if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
-    echohl GPGWarning
-    echom "File is not encrypted, all GPG functions disabled!"
-    echohl None
+  if s:unencrypted()
     call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGEditOptions()")
     return
   endif
@@ -1107,11 +1108,7 @@ endfunction
 function s:GPGFinishOptionsBuffer()
   call s:GPGDebug(3, ">>>>>>>> Entering s:GPGFinishOptionsBuffer()")
 
-  " guard for unencrypted files
-  if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
-    echohl GPGWarning
-    echom "File is not encrypted, all GPG functions disabled!"
-    echohl None
+  if s:unencrypted()
     call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGFinishOptionsBuffer()")
     return
   endif
