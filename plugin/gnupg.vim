@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2016 Dec 14
+" Last Change: 2016 Dec 17
 " Maintainer:  James McCoy <jamessan@jamessan.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -420,11 +420,8 @@ endfunction
 function s:GPGCleanup()
   call s:GPGDebug(3, ">>>>>>>> Entering s:GPGCleanup()")
 
-  " Ensure we can hide the buffer
-  setlocal bufhidden=hide
-
   " wipe out screen
-  new +only
+  new +only!
   redraw!
 
   call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGCleanup()")
