@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2016 Dec 18
+" Last Change: 2017 Feb 14
 " Maintainer:  James McCoy <jamessan@jamessan.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -205,9 +205,6 @@ augroup GnuPG
                                                              \ " call s:GPGInit(0) |" .
                                                              \ " call s:GPGEncrypt() |" .
                                                              \ " endif"
-
-  " cleanup on leaving vim
-  exe "autocmd VimLeave " . g:GPGFilePattern .    " call s:GPGCleanup()"
 augroup END
 
 " Section: Constants {{{1
@@ -430,19 +427,6 @@ function s:GPGInit(bufread)
   let s:GPGInitRun = 1
 endfunction
 
-" Function: s:GPGCleanup() {{{2
-"
-" cleanup on leaving vim
-"
-function s:GPGCleanup()
-  call s:GPGDebug(3, ">>>>>>>> Entering s:GPGCleanup()")
-
-  " wipe out screen
-  new +only!
-  redraw!
-
-  call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGCleanup()")
-endfunction
 
 " Function: s:GPGDecrypt(bufread) {{{2
 "
