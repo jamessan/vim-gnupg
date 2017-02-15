@@ -583,6 +583,8 @@ function s:GPGDecrypt(bufread)
       call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGDecrypt()")
       return
     endif
+    " Ensure the buffer is only saved by using our BufWriteCmd
+    set buftype=acwrite
   else
     execute silent 'read' fnameescape(filename)
   endif
