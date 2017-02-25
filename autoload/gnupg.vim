@@ -17,46 +17,6 @@ let s:keyPattern = '\%(0x\)\=[[:xdigit:]]\{8,16}'
 
 " Section: Public functions {{{1
 
-" Function: s:shellescape(s[, special]) {{{2
-"
-" Calls shellescape(), also taking into account 'shellslash'
-" when on Windows and using $COMSPEC as the shell.
-"
-" Returns: shellescaped string
-"
-function s:shellescape(s, ...)
-  let special = a:0 ? a:1 : 0
-  if exists('+shellslash') && &shell == $COMSPEC
-    let ssl = &shellslash
-    set noshellslash
-
-    let escaped = shellescape(a:s, special)
-
-    let &shellslash = ssl
-  else
-    let escaped = shellescape(a:s, special)
-  endif
-
-  return escaped
-endfunction
-
-" Function: s:unencrypted() {{{2
-"
-" Determines if the buffer corresponds to an existing, unencrypted file and,
-" if so, warns the user that GPG functionality has been disabled.
-"
-" Returns: true if current buffer corresponds to an existing, unencrypted file
-function! s:unencrypted()
-  if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
-    echohl GPGWarning
-    echom "File is not encrypted, all GPG functions disabled!"
-    echohl None
-    return 1
-  endif
-
-  return 0
-endfunction
-
 " Function: gnupg#init(bufread) {{{2
 "
 " initialize the plugin
@@ -701,79 +661,6 @@ function gnupg#edit_recipients()
   call s:Debug(3, "<<<<<<<< Leaving gnupg#edit_recipients()")
 endfunction
 
-" Function: s:FinishRecipientsBuffer() {{{2
-"
-" create a new recipient list from RecipientsBuffer
-"
-function s:FinishRecipientsBuffer()
-  call s:Debug(3, ">>>>>>>> Entering s:FinishRecipientsBuffer()")
-
-  if s:unencrypted()
-    call s:Debug(3, "<<<<<<<< Leaving s:FinishRecipientsBuffer()")
-    return
-  endif
-
-  " go to buffer before doing work
-  if (bufnr("%") != expand("<abuf>"))
-    " switch to scratch buffer window
-    execute 'silent! ' . bufwinnr(expand("<afile>")) . "wincmd w"
-  endif
-
-  " delete the autocommand
-  autocmd! * <buffer>
-
-  " get the recipients from the scratch buffer
-  let recipients = []
-  let lines = getline(1,"$")
-  for recipient in lines
-    let matches = matchlist(recipient, '^\(.\{-}\)\%(' . s:MagicString . '(ID:\s\+\(' . s:keyPattern . '\)\s\+.*\)\=$')
-
-    let recipient = matches[2] ? matches[2] : matches[1]
-
-    " delete all spaces at beginning and end of the recipient
-    " also delete a '!' at the beginning of the recipient
-    let recipient = substitute(recipient, "^[[:space:]!]*\\(.\\{-}\\)[[:space:]]*$", "\\1", "")
-
-    " delete comment lines
-    let recipient = substitute(recipient, "^GPG:.*$", "", "")
-
-    " only do this if the line is not empty
-    if !empty(recipient)
-      let gpgid = s:NameToID(recipient)
-      if !empty(gpgid)
-        if (match(recipients, gpgid) < 0)
-          let recipients += [gpgid]
-        endif
-      else
-        if (match(recipients, recipient) < 0)
-          let recipients += [recipient]
-          echohl GPGWarning
-          echom "The recipient \"" . recipient . "\" is not in your public keyring!"
-          echohl None
-        endif
-      endif
-    endif
-  endfor
-
-  " write back the new recipient list to the corresponding buffer and mark it
-  " as modified. Buffer is now for sure an encrypted buffer.
-  call setbufvar(b:GPGCorrespondingTo, "GPGRecipients", recipients)
-  call setbufvar(b:GPGCorrespondingTo, "&mod", 1)
-  call setbufvar(b:GPGCorrespondingTo, "GPGEncrypted", 1)
-
-  " check if there is any known recipient
-  if empty(recipients)
-    echohl GPGError
-    echom 'There are no known recipients!'
-    echohl None
-  endif
-
-  " reset modified flag
-  setl nomodified
-
-  call s:Debug(3, "<<<<<<<< Leaving s:FinishRecipientsBuffer()")
-endfunction
-
 " Function: gnupg#view_options() {{{2
 "
 " echo the recipients
@@ -882,6 +769,121 @@ function gnupg#edit_options()
   endif
 
   call s:Debug(3, "<<<<<<<< Leaving gnupg#edit_options()")
+endfunction
+
+" Section: Script local functions {{{1
+
+" Function: s:shellescape(s[, special]) {{{2
+"
+" Calls shellescape(), also taking into account 'shellslash'
+" when on Windows and using $COMSPEC as the shell.
+"
+" Returns: shellescaped string
+"
+function s:shellescape(s, ...)
+  let special = a:0 ? a:1 : 0
+  if exists('+shellslash') && &shell == $COMSPEC
+    let ssl = &shellslash
+    set noshellslash
+
+    let escaped = shellescape(a:s, special)
+
+    let &shellslash = ssl
+  else
+    let escaped = shellescape(a:s, special)
+  endif
+
+  return escaped
+endfunction
+
+" Function: s:unencrypted() {{{2
+"
+" Determines if the buffer corresponds to an existing, unencrypted file and,
+" if so, warns the user that GPG functionality has been disabled.
+"
+" Returns: true if current buffer corresponds to an existing, unencrypted file
+function! s:unencrypted()
+  if (exists("b:GPGEncrypted") && b:GPGEncrypted == 0)
+    echohl GPGWarning
+    echom "File is not encrypted, all GPG functions disabled!"
+    echohl None
+    return 1
+  endif
+
+  return 0
+endfunction
+
+" Function: s:FinishRecipientsBuffer() {{{2
+"
+" create a new recipient list from RecipientsBuffer
+"
+function s:FinishRecipientsBuffer()
+  call s:Debug(3, ">>>>>>>> Entering s:FinishRecipientsBuffer()")
+
+  if s:unencrypted()
+    call s:Debug(3, "<<<<<<<< Leaving s:FinishRecipientsBuffer()")
+    return
+  endif
+
+  " go to buffer before doing work
+  if (bufnr("%") != expand("<abuf>"))
+    " switch to scratch buffer window
+    execute 'silent! ' . bufwinnr(expand("<afile>")) . "wincmd w"
+  endif
+
+  " delete the autocommand
+  autocmd! * <buffer>
+
+  " get the recipients from the scratch buffer
+  let recipients = []
+  let lines = getline(1,"$")
+  for recipient in lines
+    let matches = matchlist(recipient, '^\(.\{-}\)\%(' . s:MagicString . '(ID:\s\+\(' . s:keyPattern . '\)\s\+.*\)\=$')
+
+    let recipient = matches[2] ? matches[2] : matches[1]
+
+    " delete all spaces at beginning and end of the recipient
+    " also delete a '!' at the beginning of the recipient
+    let recipient = substitute(recipient, "^[[:space:]!]*\\(.\\{-}\\)[[:space:]]*$", "\\1", "")
+
+    " delete comment lines
+    let recipient = substitute(recipient, "^GPG:.*$", "", "")
+
+    " only do this if the line is not empty
+    if !empty(recipient)
+      let gpgid = s:NameToID(recipient)
+      if !empty(gpgid)
+        if (match(recipients, gpgid) < 0)
+          let recipients += [gpgid]
+        endif
+      else
+        if (match(recipients, recipient) < 0)
+          let recipients += [recipient]
+          echohl GPGWarning
+          echom "The recipient \"" . recipient . "\" is not in your public keyring!"
+          echohl None
+        endif
+      endif
+    endif
+  endfor
+
+  " write back the new recipient list to the corresponding buffer and mark it
+  " as modified. Buffer is now for sure an encrypted buffer.
+  call setbufvar(b:GPGCorrespondingTo, "GPGRecipients", recipients)
+  call setbufvar(b:GPGCorrespondingTo, "&mod", 1)
+  call setbufvar(b:GPGCorrespondingTo, "GPGEncrypted", 1)
+
+  " check if there is any known recipient
+  if empty(recipients)
+    echohl GPGError
+    echom 'There are no known recipients!'
+    echohl None
+  endif
+
+  " reset modified flag
+  setl nomodified
+
+  call s:Debug(3, "<<<<<<<< Leaving s:FinishRecipientsBuffer()")
 endfunction
 
 " Function: s:FinishOptionsBuffer() {{{2
