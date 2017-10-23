@@ -455,7 +455,7 @@ function s:GPGDecrypt(bufread)
   call s:GPGDebug(3, printf(">>>>>>>> Entering s:GPGDecrypt(%d)", a:bufread))
 
   " get the filename of the current buffer
-  let filename = expand("<afile>:p")
+  let filename = resolve(expand("<afile>:p"))
 
   " clear GPGRecipients and GPGOptions
   if type(g:GPGDefaultRecipients) == type([])
@@ -469,7 +469,7 @@ function s:GPGDecrypt(bufread)
   let b:GPGOptions = []
 
   " file name minus extension
-  let autocmd_filename = expand('<afile>:r')
+  let autocmd_filename = fnamemodify(filename, ':r')
 
   " File doesn't exist yet, so nothing to decrypt
   if !filereadable(filename)
@@ -479,6 +479,10 @@ function s:GPGDecrypt(bufread)
     call s:GPGDebug(2, 'called BufNewFile autocommand for ' . autocmd_filename)
 
     set buftype=acwrite
+    " Remove the buffer name ...
+    silent 0file
+    " ... so we can force it to be absolute
+    exe 'silent file' filename
 
     " This is a new file, so force the user to edit the recipient list if
     " they open a new file and public keys are preferred
@@ -605,6 +609,10 @@ function s:GPGDecrypt(bufread)
     endif
     " Ensure the buffer is only saved by using our BufWriteCmd
     set buftype=acwrite
+    " Always set the buffer name to the absolute path, otherwise Vim won't
+    " track the correct buffer name when changing directories (due to
+    " buftype=acwrite).
+    exe 'file' filename
   else
     execute silent 'read' fnameescape(filename)
   endif
@@ -663,7 +671,7 @@ function s:GPGEncrypt()
   endif
 
   " file name minus extension
-  let autocmd_filename = expand('<afile>:r')
+  let autocmd_filename = expand('<afile>:p:r')
 
   silent exe ':doautocmd '. auType .'Pre '. fnameescape(autocmd_filename)
   call s:GPGDebug(2, 'called '. auType .'Pre autocommand for ' . autocmd_filename)
@@ -677,7 +685,7 @@ function s:GPGEncrypt()
     return
   endif
 
-  let filename = resolve(expand('<afile>'))
+  let filename = resolve(expand('<afile>:p'))
   " initialize GPGOptions if not happened before
   if (!exists("b:GPGOptions") || empty(b:GPGOptions))
     let b:GPGOptions = []
@@ -941,7 +949,7 @@ function s:GPGFinishRecipientsBuffer()
   " go to buffer before doing work
   if (bufnr("%") != expand("<abuf>"))
     " switch to scratch buffer window
-    execute 'silent! ' . bufwinnr(expand("<afile>")) . "wincmd w"
+    execute 'silent! ' . bufwinnr(expand("<afile>:p")) . "wincmd w"
   endif
 
   " delete the autocommand
@@ -1124,7 +1132,7 @@ function s:GPGFinishOptionsBuffer()
   " go to buffer before doing work
   if (bufnr("%") != expand("<abuf>"))
     " switch to scratch buffer window
-    execute 'silent! ' . bufwinnr(expand("<afile>")) . "wincmd w"
+    execute 'silent! ' . bufwinnr(expand("<afile>:p")) . "wincmd w"
   endif
 
   " clear options and unknownOptions
