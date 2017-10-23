@@ -761,7 +761,9 @@ function s:GPGEncrypt()
   endif
 
   if auType == 'BufWrite'
-    setl nomodified
+    if expand('%:p') == filename
+      setl nomodified
+    endif
     setl buftype=acwrite
     let &readonly = filereadable(filename) && filewritable(filename) == 0
   endif
