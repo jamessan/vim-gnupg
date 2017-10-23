@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2017 May 31
+" Last Change: 2017 Oct 22
 " Maintainer:  James McCoy <jamessan@jamessan.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -478,6 +478,8 @@ function s:GPGDecrypt(bufread)
     silent execute ':doautocmd BufNewFile ' . fnameescape(autocmd_filename)
     call s:GPGDebug(2, 'called BufNewFile autocommand for ' . autocmd_filename)
 
+    set buftype=acwrite
+
     " This is a new file, so force the user to edit the recipient list if
     " they open a new file and public keys are preferred
     if (g:GPGPreferSymmetric == 0)
@@ -752,6 +754,7 @@ function s:GPGEncrypt()
 
   if auType == 'BufWrite'
     setl nomodified
+    setl buftype=acwrite
     let &readonly = filereadable(filename) && filewritable(filename) == 0
   endif
 
