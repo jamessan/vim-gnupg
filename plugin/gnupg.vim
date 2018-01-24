@@ -473,6 +473,14 @@ function s:GPGDecrypt(bufread)
 
   " File doesn't exist yet, so nothing to decrypt
   if !filereadable(filename)
+    if !a:bufread
+      redraw!
+      echohl GPGError
+      echom "E484: Can't open file" filename
+      echohl None
+      return
+    endif
+
     " Allow the user to define actions for GnuPG buffers
     silent doautocmd User GnuPG
     silent execute ':doautocmd BufNewFile ' . fnameescape(autocmd_filename)
