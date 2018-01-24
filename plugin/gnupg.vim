@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2017 Dec 15
+" Last Change: 2018 Jan 23
 " Maintainer:  James McCoy <jamessan@jamessan.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -607,12 +607,14 @@ function s:GPGDecrypt(bufread)
       call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGDecrypt()")
       return
     endif
-    " Ensure the buffer is only saved by using our BufWriteCmd
-    set buftype=acwrite
-    " Always set the buffer name to the absolute path, otherwise Vim won't
-    " track the correct buffer name when changing directories (due to
-    " buftype=acwrite).
-    exe 'file' fnameescape(filename)
+    if a:bufread
+      " Ensure the buffer is only saved by using our BufWriteCmd
+      set buftype=acwrite
+      " Always set the buffer name to the absolute path, otherwise Vim won't
+      " track the correct buffer name when changing directories (due to
+      " buftype=acwrite).
+      exe 'file' fnameescape(filename)
+    endif
   else
     execute silent 'read' fnameescape(filename)
   endif
