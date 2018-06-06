@@ -79,6 +79,10 @@
 "     "gpg --trust-model always" if "gpg" is available, falling back to
 "     "gpg2 --trust-model always" if not.
 "
+"   g:GPGPreferGPG2
+"     If set, use gpg2 instead of gpg. Add 'let g:GPGPreferGPG2 = 1' to ~/.vimrc.
+"     Defaults to 0.
+"
 "   g:GPGUseAgent
 "     If set to 0 a possible available gpg-agent won't be used. Defaults to 1.
 "
@@ -302,12 +306,17 @@ function s:GPGInit(bufread)
     return
   endif
 
+  " let g:GPGPreferGPG2 = 1
   " check what gpg command to use
   if (!exists("g:GPGExecutable"))
-    if executable("gpg")
-      let g:GPGExecutable = "gpg --trust-model always"
-    else
+    if (exists("g:GPGPreferGPG2") && g:GPGPreferGPG2 == 1 && executable("gpg2"))
       let g:GPGExecutable = "gpg2 --trust-model always"
+    else
+      if executable("gpg")
+        let g:GPGExecutable = "gpg --trust-model always"
+      else
+        let g:GPGExecutable = "gpg2 --trust-model always"
+      endif
     endif
   endif
 
