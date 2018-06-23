@@ -803,24 +803,17 @@ function s:GPGViewRecipients()
   let recipients = s:GPGCheckRecipients(b:GPGRecipients)
 
   echo 'This file has following recipients (Unknown recipients have a prepended "!"):'
-  " echo the recipients
-  for name in recipients.valid
-    let name = s:GPGIDToName(name)
-    echo name
-  endfor
-
-  " echo the unknown recipients
-  echohl GPGWarning
-  for name in recipients.unknown
-    let name = "!" . name
-    echo name
-  endfor
-  echohl None
-
-  " check if there is any known recipient
   if empty(recipients.valid)
     echohl GPGError
-    echom 'There are no known recipients!'
+    echo 'There are no known recipients!'
+    echohl None
+  else
+    echo join(map(recipients.valid, 's:GPGIDToName(v:val)'), "\n")
+  endif
+
+  if !empty(recipients.unknown)
+    echohl GPGWarning
+    echo join(map(recipients.unknown, '"!".v:val'), "\n")
     echohl None
   endif
 
@@ -1033,10 +1026,7 @@ function s:GPGViewOptions()
 
   if (exists("b:GPGOptions"))
     echo 'This file has following options:'
-    " echo the options
-    for option in b:GPGOptions
-      echo option
-    endfor
+    echo join(b:GPGOptions, "\n")
   endif
 
   call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGViewOptions()")
