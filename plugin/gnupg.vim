@@ -175,7 +175,7 @@
 if (exists("g:loaded_gnupg") || &cp || exists("#GnuPG"))
   finish
 endif
-let g:loaded_gnupg = '2.6.1-dev'
+let g:loaded_gnupg = '2.6.1'
 let s:GPGInitRun = 0
 
 " check for correct vim version {{{2
