@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2018 Jun 22
+" Last Change: 2018 Aug 06
 " Maintainer:  James McCoy <jamessan@jamessan.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -590,7 +590,7 @@ function s:GPGDecrypt(bufread)
 
   if b:GPGEncrypted
     " check if the message is armored
-    if (match(output, "gpg: armor header") >= 0)
+    if readfile(filename, '', 1)[0] =~# '^-\{5}BEGIN PGP\%( SIGNED\)\= MESSAGE-\{5}$'
       call s:GPGDebug(1, "this file is armored")
       let b:GPGOptions += ["armor"]
     endif
