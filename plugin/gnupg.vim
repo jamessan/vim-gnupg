@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2018 Aug 06
+" Last Change: 2018 Nov 18
 " Maintainer:  James McCoy <jamessan@jamessan.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -746,7 +746,12 @@ function s:GPGEncrypt()
 
   " encrypt the buffer
   let destfile = tempname()
-  let cmd = { 'level': 1, 'ex': "'[,']write !" }
+  let cmd = { 'level': 1, 'ex': "write !" }
+  " Only use '[,'] for FileWriteCmd since other plugins may need to change
+  " them for a normal BufWriteCmd.
+  if auType == 'FileWrite'
+    let cmd.ex = "'[,']" . cmd.ex
+  endif
   let cmd.args = '--quiet --no-encrypt-to ' . options
   let cmd.redirect = '>' . s:shellescape(destfile, { 'special': 1, 'cygpath': 1 })
   silent call s:GPGExecute(cmd)
