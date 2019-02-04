@@ -291,7 +291,7 @@ function gnupg#decrypt(bufread)
     " This is a new file, so force the user to edit the recipient list if
     " they open a new file and public keys are preferred
     if (g:GPGPreferSymmetric == 0)
-        call s:GPGEditRecipients()
+        call gnupg#edit_recipients()
     endif
 
     return
