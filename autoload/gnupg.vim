@@ -680,8 +680,11 @@ function gnupg#edit_recipients()
   endif
 
   if s:NewInputBuffer('GPGRecipients')
-    " add a autocommand to regenerate the recipients after a write
-    autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishRecipientsBuffer()
+    augroup GPGRecipients
+      au! * <buffer>
+      " add a autocommand to regenerate the recipients after a write
+      autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishRecipientsBuffer()
+    augroup END
 
     " put some comments to the scratch buffer
     silent put ='GPG: ----------------------------------------------------------------------'
@@ -766,9 +769,6 @@ function s:GPGFinishRecipientsBuffer()
     " switch to scratch buffer window
     execute 'silent! ' . bufwinnr(expand("<afile>:p")) . "wincmd w"
   endif
-
-  " delete the autocommand
-  autocmd! * <buffer>
 
   " get the recipients from the scratch buffer
   let recipients = []
@@ -856,8 +856,11 @@ function gnupg#edit_options()
 
   " only do this if it isn't already a GPGOptions_* buffer
   if s:NewInputBuffer('GPGOptions')
-    " add a autocommand to regenerate the options after a write
-    autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishOptionsBuffer()
+    augroup GPGOptions
+      au! * <buffer>
+      " add a autocommand to regenerate the options after a write
+      autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishOptionsBuffer()
+    augroup END
 
     " put some comments to the scratch buffer
     silent put ='GPG: ----------------------------------------------------------------------'
@@ -915,9 +918,6 @@ function s:GPGFinishOptionsBuffer()
   " clear options and unknownOptions
   let options = []
   let unknownOptions = []
-
-  " delete the autocommand
-  autocmd! * <buffer>
 
   " get the options from the scratch buffer
   let lines = getline(1, "$")
