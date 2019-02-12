@@ -1,5 +1,5 @@
 " Name:    autoload/gnupg.vim
-" Last Change: 2019 Feb 03
+" Last Change: 2019 Feb 11
 " Maintainer:  James McCoy <jamessan@jamessan.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -585,6 +585,52 @@ function gnupg#encrypt()
   call s:GPGDebug(3, "<<<<<<<< Leaving gnupg#encrypt()")
 endfunction
 
+" Function: s:NewInputBuffer(basename) {{{2
+"
+" Create the input buffer used for editing the recipients or options.
+"
+function s:NewInputBuffer(basename)
+  " only do this if it isn't already an input buffer
+  if !exists('b:GPGCorrespondingTo')
+
+    " save buffer name
+    let buffername = bufnr('%')
+    let editbuffername = a:basename . '_' . buffername
+
+    " check if this buffer exists
+    if !bufexists(editbuffername)
+      " create scratch buffer
+      execute 'silent! split ' . fnameescape(editbuffername)
+    else
+      if bufwinnr(editbuffername) >= 0
+        " switch to scratch buffer window
+        execute 'silent! ' . bufwinnr(editbuffername) . 'wincmd w'
+      else
+        " split scratch buffer window
+        execute 'silent! sbuffer ' . fnameescape(editbuffername)
+      endif
+
+      " empty the buffer
+      silent %delete
+    endif
+
+    " Mark the buffer as a scratch buffer
+    setlocal buftype=acwrite
+    setlocal bufhidden=hide
+    setlocal noswapfile
+    setlocal nowrap
+    setlocal nobuflisted
+    setlocal nonumber
+
+    " so we know for which other buffer this edit buffer is
+    let b:GPGCorrespondingTo = buffername
+
+    return 1
+  endif
+
+  return 0
+endfunction
+
 " Function: gnupg#view_recipients() {{{2
 "
 " echo the recipients
@@ -633,46 +679,9 @@ function gnupg#edit_recipients()
     return
   endif
 
-  " only do this if it isn't already a GPGRecipients_* buffer
-  if (!exists('b:GPGCorrespondingTo'))
-
-    " save buffer name
-    let buffername = bufnr("%")
-    let editbuffername = "GPGRecipients_" . buffername
-
-    " check if this buffer exists
-    if (!bufexists(editbuffername))
-      " create scratch buffer
-      execute 'silent! split ' . fnameescape(editbuffername)
-
-      " add a autocommand to regenerate the recipients after a write
-      autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishRecipientsBuffer()
-    else
-      if (bufwinnr(editbuffername) >= 0)
-        " switch to scratch buffer window
-        execute 'silent! ' . bufwinnr(editbuffername) . "wincmd w"
-      else
-        " split scratch buffer window
-        execute 'silent! sbuffer ' . fnameescape(editbuffername)
-
-        " add a autocommand to regenerate the recipients after a write
-        autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishRecipientsBuffer()
-      endif
-
-      " empty the buffer
-      silent %delete
-    endif
-
-    " Mark the buffer as a scratch buffer
-    setlocal buftype=acwrite
-    setlocal bufhidden=hide
-    setlocal noswapfile
-    setlocal nowrap
-    setlocal nobuflisted
-    setlocal nonumber
-
-    " so we know for which other buffer this edit buffer is
-    let b:GPGCorrespondingTo = buffername
+  if s:NewInputBuffer('GPGRecipients')
+    " add a autocommand to regenerate the recipients after a write
+    autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishRecipientsBuffer()
 
     " put some comments to the scratch buffer
     silent put ='GPG: ----------------------------------------------------------------------'
@@ -846,44 +855,9 @@ function gnupg#edit_options()
   endif
 
   " only do this if it isn't already a GPGOptions_* buffer
-  if (!exists('b:GPGCorrespondingTo'))
-
-    " save buffer name
-    let buffername = bufnr("%")
-    let editbuffername = "GPGOptions_" . buffername
-
-    " check if this buffer exists
-    if (!bufexists(editbuffername))
-      " create scratch buffer
-      execute 'silent! split ' . fnameescape(editbuffername)
-
-      " add a autocommand to regenerate the options after a write
-      autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishOptionsBuffer()
-    else
-      if (bufwinnr(editbuffername) >= 0)
-        " switch to scratch buffer window
-        execute 'silent! ' . bufwinnr(editbuffername) . "wincmd w"
-      else
-        " split scratch buffer window
-        execute 'silent! sbuffer ' . fnameescape(editbuffername)
-
-        " add a autocommand to regenerate the options after a write
-        autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishOptionsBuffer()
-      endif
-
-      " empty the buffer
-      silent %delete
-    endif
-
-    " Mark the buffer as a scratch buffer
-    setlocal buftype=nofile
-    setlocal noswapfile
-    setlocal nowrap
-    setlocal nobuflisted
-    setlocal nonumber
-
-    " so we know for which other buffer this edit buffer is
-    let b:GPGCorrespondingTo = buffername
+  if s:NewInputBuffer('GPGOptions')
+    " add a autocommand to regenerate the options after a write
+    autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishOptionsBuffer()
 
     " put some comments to the scratch buffer
     silent put ='GPG: ----------------------------------------------------------------------'
