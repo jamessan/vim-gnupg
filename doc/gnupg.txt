@@ -92,7 +92,7 @@ g:GPGHomedir            If set, specifies the directory that will be used for
                                                 *gnupg-g:GPGFilePattern*
 g:GPGFilePattern        If set, overrides the default set of file patterns
                         that determine whether this plugin will be activated.
-                        Defaults to '*.\(gpg\|asc\|pgp\)'.
+                        Defaults to `*.{gpg,asc,pgp}`.
 
 ==============================================================================
 vim:tw=78:sw=4:ts=8:ft=help:norl:

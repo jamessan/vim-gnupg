@@ -1,5 +1,5 @@
 " Name:    gnupg.vim
-" Last Change: 2019 Feb 23
+" Last Change: 2019 May 30
 " Maintainer:  James McCoy <jamessan@jamessan.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -26,7 +26,7 @@ endif
 " Section: Autocmd setup {{{1
 
 if (!exists("g:GPGFilePattern"))
-  let g:GPGFilePattern = '*.\(gpg\|asc\|pgp\)'
+  let g:GPGFilePattern = '*.{gpg,asc,pgp}'
 endif
 
 augroup GnuPG
