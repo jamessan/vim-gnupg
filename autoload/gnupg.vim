@@ -1,5 +1,5 @@
 " Name:    autoload/gnupg.vim
-" Last Change: 2019 Feb 11
+" Last Change: 2019 Aug 23
 " Maintainer:  James McCoy <jamessan@jamessan.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -217,7 +217,7 @@ function gnupg#init(bufread)
       set undolevels=-1
       silent read !tty
       let $GPG_TTY = getline('.')
-      silent delete
+      silent '[,']delete _
       let [&l:modified, &undolevels] = [mod, levels]
       " redraw is needed since we're using silent to run !tty, c.f. :help :!
       redraw!
