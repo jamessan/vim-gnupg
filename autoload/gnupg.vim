@@ -1,5 +1,5 @@
 " Name:    autoload/gnupg.vim
-" Last Change: 2019 Feb 11
+" Last Change: 2019 Aug 23
 " Maintainer:  James McCoy <jamessan@jamessan.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -213,18 +213,20 @@ function gnupg#init(bufread)
       " modified just by detecting the correct tty value.
       " Do the &undolevels dance so the :read and :delete don't get added into
       " the undo tree, as the user needn't be aware of these.
-      let [mod, levels] = [&l:modified, &undolevels]
-      set undolevels=-1
-      silent read !tty
-      let $GPG_TTY = getline('.')
-      silent delete
-      let [&l:modified, &undolevels] = [mod, levels]
-      " redraw is needed since we're using silent to run !tty, c.f. :help :!
-      redraw!
-      if (v:shell_error)
+      if executable('tty')
+        let [mod, levels] = [&l:modified, &undolevels]
+        set undolevels=-1
+        silent read !tty
+        let $GPG_TTY = getline('.')
+        silent '[,']delete _
+        let [&l:modified, &undolevels] = [mod, levels]
+        " redraw is needed since we're using silent to run !tty, c.f. :help :!
+        redraw!
+      endif
+      if v:shell_error || !exists("$GPG_TTY")
         let $GPG_TTY = ""
         echohl GPGWarning
-        echom "$GPG_TTY is not set and the `tty` command failed! gpg-agent might not work."
+        echom "$GPG_TTY is not set and the `tty` command failed/doesn't exist! gpg-agent might not work."
         echohl None
       endif
     endif
