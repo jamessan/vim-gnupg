@@ -368,6 +368,16 @@ function gnupg#decrypt(bufread)
       end
       let start = match(output, asymmPattern, start)
     endwhile
+
+    " determine if the file was signed; if so, we will too
+    let cmd = { 'level': 3 }
+    let cmd.args = '--list-packets ' . s:shellescape(filename, { 'cygpath': 1 })
+    let output = s:GPGSystem(cmd)
+
+    if (matchstr(output, "^:\(onepass_sig\|signature\) packet:") >= 0)
+      let g:GPGPreferSign = 1
+    endif
+
   else
     " file is not encrypted
     let b:GPGEncrypted = 0
@@ -509,10 +519,12 @@ function gnupg#encrypt()
     if (preferArmor >= 0 && preferArmor) || filename =~ '\.asc$'
       let b:GPGOptions += ["armor"]
     endif
-    if (exists("g:GPGPreferSign") && g:GPGPreferSign == 1)
-      let b:GPGOptions += ["sign"]
-    endif
     call s:GPGDebug(1, "no options set, so using default options: " . string(b:GPGOptions))
+  endif
+
+  " check if we should sign this file
+  if (exists("g:GPGPreferSign") && g:GPGPreferSign == 1)
+    let b:GPGOptions += ["sign"]
   endif
 
   " built list of options
