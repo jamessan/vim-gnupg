@@ -1,5 +1,5 @@
 " Name:    autoload/gnupg.vim
-" Last Change: 2019 Aug 23
+" Last Change: 2020 Nov 09
 " Maintainer:  James McCoy <jamessan@jamessan.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -7,7 +7,7 @@
 "          modify it under the terms of the GNU General Public License
 "          as published by the Free Software Foundation; either version
 "          2 of the License, or (at your option) any later version.
-"          See http://www.gnu.org/copyleft/gpl-2.0.txt
+"          See https://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 " Section: Constants {{{1
 
