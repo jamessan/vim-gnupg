@@ -94,5 +94,32 @@ g:GPGFilePattern        If set, overrides the default set of file patterns
                         that determine whether this plugin will be activated.
                         Defaults to `*.{gpg,asc,pgp}`.
 
+------------------------------------------------------------------------------
+DEBUGGING                                       *gnupg-debugging*
+
+The plugin honors |'verbose'| and currently has 3 different trace levels:
+
+	1	Plugin and gnupg version, high-level status, and the
+		encrypt/decrypt command line/exit status
+	2	.. plus triggered autocmds, recipient decoding command
+		line/output/exit status, and gnupg's supported algorithms
+	3	.. plus values of relevant Vim options, and tracing of which
+		plugin functions are called
+
+Example: >
+
+        :verbose edit foo.gpg
+
+The above would trace everything from level 1 into Vim's |:messages| buffer,
+as well as display the messages as they happen.
+
+>
+        :set verbosefile=debug.log
+        :2verbose write foo.gpg
+        :set verbosefile=
+
+While this would trace everything from levels 1 and 2 into the |:messages|
+buffer as well as saving it to the file `debug.log`.
+
 ==============================================================================
 vim:tw=78:sw=4:ts=8:ft=help:norl:

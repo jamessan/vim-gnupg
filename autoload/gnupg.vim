@@ -1206,7 +1206,7 @@ endfunction
 " only define function if GPGDebugLevel set at all
 "
 function s:GPGDebug(level, text)
-  if exists("g:GPGDebugLevel") && g:GPGDebugLevel >= a:level
+  if get(g:, 'GPGDebugLevel', 0) >= a:level || &verbose >= a:level
     if exists("g:GPGDebugLog")
       execute "redir >> " . g:GPGDebugLog
       silent echom "GnuPG: " . a:text
