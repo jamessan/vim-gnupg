@@ -1,5 +1,5 @@
 " Name:    autoload/gnupg.vim
-" Last Change: 2020 Nov 09
+" Last Change: 2020 Nov 11
 " Maintainer:  James McCoy <jamessan@jamessan.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -685,7 +685,8 @@ function gnupg#edit_recipients()
     augroup GPGRecipients
       au! * <buffer>
       " add a autocommand to regenerate the recipients after a write
-      autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishRecipientsBuffer()
+      autocmd BufHidden,BufWriteCmd <buffer> call s:GPGFinishRecipientsBuffer()
+      autocmd BufUnload <buffer> exe 'au! GPGRecipients * <buffer='. expand('<abuf>') .'>'
     augroup END
 
     " put some comments to the scratch buffer
@@ -861,7 +862,8 @@ function gnupg#edit_options()
     augroup GPGOptions
       au! * <buffer>
       " add a autocommand to regenerate the options after a write
-      autocmd BufHidden,BufUnload,BufWriteCmd <buffer> call s:GPGFinishOptionsBuffer()
+      autocmd BufHidden,BufWriteCmd <buffer> call s:GPGFinishOptionsBuffer()
+      autocmd BufUnload <buffer> exe 'au! GPGOptions * <buffer='. expand('<abuf>') .'>'
     augroup END
 
     " put some comments to the scratch buffer
