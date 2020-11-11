@@ -9,9 +9,21 @@ undofile to increase security.
 
 ## Installation
 
-Copy the `gnupg.vim` file to the `$HOME/.vim/plugin` directory. Refer to `:help
-add-plugin`, `:help add-global-plugin` and `:help runtimepath` for more details
-about Vim plugins.
+Use your favorite [plugin manager](https://github.com/mhinz/vim-galore#managing-plugins).
+
+For manual installation, use either
+[pathogen](https://github.com/tpope/vim-pathogen) (for old Vim versions) or
+Vim's [packages](https://vimhelp.org/repeat.txt.html#packages).
+
+### pathogen
+
+Clone or unpack into `$HOME/.vim/bundle`
+
+### Vim package
+
+Clone or unpack into `$HOME/.vim/pack/gnupg/start/`
+
+## GPG Agent
 
 From `man 1 gpg-agent`:
 
@@ -26,6 +38,8 @@ From `man 1 gpg-agent`:
 
 Most distributions provide software to ease handling of gpg and gpg-agent.
 Examples are keychain or seahorse.
+
+## Reacting to opening an encrypted file
 
 If there are specific actions that should take place when editing a
 GnuPG-managed buffer, an autocmd for the User event and GnuPG pattern can be
