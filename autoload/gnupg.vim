@@ -769,8 +769,14 @@ function s:GPGFinishRecipientsBuffer()
 
   " go to buffer before doing work
   if (bufnr("%") != expand("<abuf>"))
-    " switch to scratch buffer window
-    execute 'silent! ' . bufwinnr(expand("<afile>:p")) . "wincmd w"
+    let winnr = bufwinnr(expand('<afile>:p'))
+    if winnr >= 0
+      " switch to scratch buffer window
+      execute 'silent! ' . winnr . "wincmd w"
+    else
+      call s:GPGDebug(3, '<<<<<<<< Leaving s:GPGFinishRecipientsBuffer() early because buffer is not displayed')
+      return
+    endif
   endif
 
   " get the recipients from the scratch buffer
@@ -915,8 +921,14 @@ function s:GPGFinishOptionsBuffer()
 
   " go to buffer before doing work
   if (bufnr("%") != expand("<abuf>"))
-    " switch to scratch buffer window
-    execute 'silent! ' . bufwinnr(expand("<afile>:p")) . "wincmd w"
+    let winnr = bufwinnr(expand('<afile>:p'))
+    if winnr >= 0
+      " switch to scratch buffer window
+      execute 'silent! ' . winnr . "wincmd w"
+    else
+      call s:GPGDebug(3, '<<<<<<<< Leaving s:GPGFinishOptionsBuffer() early because buffer is not displayed')
+      return
+    endif
   endif
 
   " clear options and unknownOptions
