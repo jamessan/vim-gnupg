@@ -1,5 +1,5 @@
 " Name:    autoload/gnupg.vim
-" Last Change: 2020 Nov 11
+" Last Change: 2022 May 18
 " Maintainer:  James McCoy <jamessan@jamessan.com>
 " Original Author:  Markus Braun <markus.braun@krawel.de>
 " Summary: Vim plugin for transparent editing of gpg encrypted files.
@@ -1153,8 +1153,10 @@ function s:GPGPostCmd()
   " Workaround a bug in the interaction between console vim and
   " pinentry-curses by forcing Vim to re-detect and setup its terminal
   " settings
-  let &term = &term
-  silent doautocmd TermChanged
+  if !has('gui_running')
+    let &term = &term
+    silent doautocmd TermChanged
+  endif
 endfunction
 
 " Function: s:GPGSystem(dict) {{{2
