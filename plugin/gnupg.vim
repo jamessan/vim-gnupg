@@ -26,7 +26,7 @@ endif
 " Section: Autocmd setup {{{1
 
 if (!exists("g:GPGFilePattern"))
-  let g:GPGFilePattern = '*.{gpg,asc,pgp}'
+  let g:GPGFilePattern = '*.{gpg,asc,pgp}{.*,}'
 endif
 
 augroup GnuPG
