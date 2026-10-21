@@ -323,7 +323,7 @@ function gnupg#decrypt(bufread)
     let b:GPGOptions += ["symmetric"]
 
     " find the used cipher algorithm
-    let cipher = substitute(output, ".*gpg: \\([^ ]\\+\\) encrypted data.*", "\\1", "")
+    let cipher = substitute(output, '.*gpg: \([^. ]\+\)\%(\.[^ ]\+\)\= encrypted data.*', '\1', "")
     if (match(s:GPGCipher, "\\<" . cipher . "\\>") >= 0)
       let b:GPGOptions += ["cipher-algo " . cipher]
       call s:GPGDebug(1, "cipher-algo is " . cipher)
